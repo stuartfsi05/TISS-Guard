@@ -225,9 +225,25 @@ const Popup = () => {
                 {activeTab === 'upgrade' && (
                     <div className="text-center space-y-4">
                         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-lg shadow-lg">
-                            <h2 className="text-2xl font-bold mb-2">TISS Guard PRO</h2>
-                            <p className="text-blue-100 mb-4">Validações ilimitadas e suporte prioritário.</p>
-                            <div className="text-3xl font-bold mb-2">R$ 29,90 <span className="text-sm font-normal">/mês</span></div>
+                            <h2 className="text-2xl font-bold mb-4">TISS Guard PRO</h2>
+
+                            <div className="flex flex-col gap-3 text-left bg-white/10 p-4 rounded-md">
+                                <div className="flex justify-between items-center border-b border-white/20 pb-2">
+                                    <span className="text-sm font-medium">Mensal</span>
+                                    <div className="text-right">
+                                        <div className="text-xl font-bold">R$ 89,90</div>
+                                        <div className="text-[10px] opacity-80">Cobrado todo mês</div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-between items-center pt-1">
+                                    <span className="text-sm font-medium">Anual</span>
+                                    <div className="text-right">
+                                        <div className="text-xl font-bold">R$ 899,00</div>
+                                        <div className="text-[10px] opacity-80 font-semibold text-green-200">17% OFF • 2 Meses Grátis</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <p className="text-sm text-slate-600">
