@@ -85,9 +85,8 @@ export const StorageService = {
             }
             return false;
         } catch (e: any) {
-            console.error("Validação de licença falhou:", e);
-            // Temporary Debug: Show error to user
-            if (typeof alert !== 'undefined') alert(`Erro Técnico na Validação: ${e.message}`);
+            // Log only generic error message for security
+            console.error("Validação de licença falhou.");
             return false;
         }
     }

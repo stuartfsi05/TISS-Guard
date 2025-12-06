@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import { AppSettings, DEFAULT_SETTINGS } from './StorageService';
+import { CORE_RULES } from './RulesEngine';
 
 export interface ValidationError {
     code: string;
@@ -18,86 +19,31 @@ const parser = new XMLParser({
     removeNSPrefix: true,
 });
 
+export const parseXml = (content: string) => parser.parse(content);
+
 export const validateTiss = (xmlContent: string, settings: AppSettings = DEFAULT_SETTINGS): ValidationResult => {
-    const errors: ValidationError[] = [];
+    let errors: ValidationError[] = [];
 
     try {
         const jsonObj = parser.parse(xmlContent);
 
-        // Helper recursive finder
-        const findAllValues = (obj: any, keyToFind: string): { value: any, path: string }[] => {
-            let results: { value: any, path: string }[] = [];
-            if (typeof obj !== 'object' || obj === null) return results;
+        // --- Orchestrator Logic ---
+        CORE_RULES.forEach(rule => {
+            // Check if rule is enabled in settings
+            // Mapping:
+            // "DATE_FUTURE_ERROR" -> settings.checkFutureDates
+            // "FINANCIAL_ZERO_OR_NEGATIVE" -> settings.checkNegativeValues
+            // "CRITICAL_MISSING_GUIA" -> Always Enabled (Core Integrity)
 
-            if (keyToFind in obj) {
-                results.push({ value: obj[keyToFind], path: keyToFind });
+            let isEnabled = true; // Default for Critical Rules
+            if (rule.id === 'DATE_FUTURE_ERROR') isEnabled = settings.checkFutureDates;
+            if (rule.id === 'FINANCIAL_ZERO_OR_NEGATIVE') isEnabled = settings.checkNegativeValues;
+
+            if (isEnabled) {
+                const ruleErrors = rule.validate(jsonObj);
+                errors = errors.concat(ruleErrors);
             }
-
-            for (const key of Object.keys(obj)) {
-                const childResults = findAllValues(obj[key], keyToFind);
-                // Prepend parent key to path for context (optional, simple for now)
-                results = results.concat(childResults.map(r => ({ ...r, path: `${key} > ${r.path}` })));
-            }
-            return results;
-        };
-
-        // 1. Regra de Integridade (Campo Obrigatório)
-        // Verifique se a tag numeroGuiaPrestador existe e não está vazia.
-        const numeroGuiaHits = findAllValues(jsonObj, 'numeroGuiaPrestador');
-        const hasValidGuia = numeroGuiaHits.some(hit => String(hit.value).trim() !== '');
-
-        if (!hasValidGuia) {
-            errors.push({
-                code: 'CRITICAL_MISSING_GUIA',
-                message: 'Erro Crítico: A guia não possui número identificador do prestador.',
-                location: 'numeroGuiaPrestador'
-            });
-        }
-
-        // 2. Regra Temporal (Viagem no Tempo)
-        if (settings.checkFutureDates) {
-            const dateTags = ['dataAtendimento', 'dataExecucao', 'dataEmissao'];
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            dateTags.forEach(tag => {
-                const hits = findAllValues(jsonObj, tag);
-                hits.forEach(hit => {
-                    const dateStr = String(hit.value);
-                    const date = new Date(dateStr);
-                    if (!isNaN(date.getTime()) && date > today) {
-                        errors.push({
-                            code: 'DATE_FUTURE_ERROR',
-                            message: `Erro de Data: O procedimento com ${tag} (${dateStr}) consta com data futura.`,
-                            location: hit.path
-                        });
-                    }
-                });
-            });
-        }
-
-        // 3. Regra Financeira (Valor Positivo)
-        // Verifique se algum valor é menor ou igual a zero.
-        if (settings.checkNegativeValues) {
-            const moneyTags = ['valorTotal', 'valorTotalGeral', 'valorProcessado', 'valorLiberado', 'valorApresentado'];
-            moneyTags.forEach(tag => {
-                const hits = findAllValues(jsonObj, tag);
-                hits.forEach(hit => {
-                    // Replace comma with dot if pt-BR format, though TISS XML usually uses dot.
-                    // Safe approach: just parse.
-                    const valStr = String(hit.value).replace(',', '.');
-                    const num = parseFloat(valStr);
-
-                    if (!isNaN(num) && num <= 0) {
-                        errors.push({
-                            code: 'FINANCIAL_ZERO_OR_NEGATIVE',
-                            message: `Erro Financeiro: O valor na tag <${tag}> (${hit.value}) não pode ser zero ou negativo.`,
-                            location: hit.path
-                        });
-                    }
-                });
-            });
-        }
+        });
 
         if (errors.length > 0) {
             return {

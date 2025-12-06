@@ -25,7 +25,14 @@
                 "src/content/index.ts"
             ],
             "matches": [
-                "<all_urls>"
+                "*://*.unimed.coop.br/*",
+                "*://*.unimed.com.br/*",
+                "*://*.bradescoseguros.com.br/*",
+                "*://*.sulamericasaude.com.br/*",
+                "*://*.amil.com.br/*",
+                "*://*.gndi.com.br/*",
+                "*://*.porto.com.br/*",
+                "http://localhost:*/*"
             ],
             "run_at": "document_end"
         }

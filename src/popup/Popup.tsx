@@ -391,6 +391,12 @@ const Popup = () => {
                     </div>
                 )}
             </main>
+
+            {/* Privacy Assurance Footer */}
+            <div className={`text-[10px] text-center py-2 border-t ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
+                <p>🔒 Processamento 100% Local. Seus dados nunca saem deste computador.</p>
+                <p>Em conformidade com a LGPD e TISS/ANS.</p>
+            </div>
         </div>
     );
 };

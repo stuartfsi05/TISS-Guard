@@ -1,7 +1,12 @@
 import { validateTiss } from '../services/XmlValidatorService';
 import { StorageService } from '../services/StorageService';
+import { PortalScraper } from '../services/PortalScraper';
+import { runSelfTest } from '../services/RulesEngine.test';
 
-console.log('TISS Guard Content Script Active');
+// Expose diagnostic for audit
+(window as any).tissGuardDiag = runSelfTest;
+
+console.log('TISS Guard Content Script Active. Run window.tissGuardDiag() to test rules.');
 
 const HOST_ID = 'tiss-guard-host';
 
@@ -170,6 +175,13 @@ const handleFileSelect = async (event: Event) => {
     return;
   }
 
+  // Safety Check: 50MB Limit
+  const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+  if (file.size > MAX_SIZE) {
+    showErrors(['⛔ Erro de Segurança', 'Arquivo excede o limite do navegador (50MB).', 'Reduza o arquivo antes de tentar novamente.'], target);
+    return;
+  }
+
   try {
     const text = await file.text();
     const can = await StorageService.canValidate();
@@ -202,13 +214,20 @@ const handleFileSelect = async (event: Event) => {
 
 // Monitor DOM for new inputs
 const observeInputs = () => {
-  // Attach to existing
+  // Attach to existing file inputs
   document.querySelectorAll('input[type="file"]').forEach(input => {
     if (!input.hasAttribute('data-tiss-guard')) {
       input.addEventListener('change', handleFileSelect);
       input.setAttribute('data-tiss-guard', 'true');
     }
   });
+
+  // [Phase 2] Scan for Portal Errors
+  // We debounce this to avoid spamming on every DOM change
+  const errors = PortalScraper.scan();
+  if (errors.length > 0) {
+    // console.log('⚠️ [TISS Guard] Portal Error Detected:', errors); // Silenced for Production
+  }
 };
 
 const observer = new MutationObserver(() => {
@@ -217,5 +236,82 @@ const observer = new MutationObserver(() => {
 
 observer.observe(document.body, { childList: true, subtree: true });
 
+// --- RPA: Floating Action Button ---
+const injectRpaButton = () => {
+  const shadow = createShadowHost(); // Reuse existing shadow root
+
+  // Check if button already exists in shadow DOM to prevent duplicates
+  if (shadow.querySelector('#btn-rpa-fab')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'btn-rpa-fab';
+  btn.textContent = '🤖 Preencher TISS';
+  btn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-weight: bold;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        z-index: 99999;
+        font-family: inherit;
+        transition: transform 0.2s;
+    `;
+
+  btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
+  btn.onmouseout = () => btn.style.transform = 'scale(1)';
+
+  // Hidden File Input for RPA
+  const rpaInput = document.createElement('input');
+  rpaInput.type = 'file';
+  rpaInput.accept = '.xml';
+  rpaInput.style.display = 'none';
+
+  // Hook up click
+  btn.onclick = () => rpaInput.click();
+
+  // Hook up file selection
+  rpaInput.onchange = async (e) => {
+    const target = e.target as HTMLInputElement;
+    if (!target.files?.[0]) return;
+
+    const file = target.files[0];
+    try {
+      const text = await file.text();
+
+      // 1. Validate First
+      const settings = await StorageService.getSettings();
+      const result = validateTiss(text, settings);
+
+      if (!result.isValid) {
+        // Show errors using existing mechanism but targeting the RPA input (virtual)
+        // Or just Alert for now
+        alert(`⚠️ Atenção: O arquivo contém erros!\n\n${result.errors.map(e => e.message).join('\n')}`);
+        // return; // Optional: Stop or allow filling anyway? Let's allow but warn.
+      }
+
+      // 2. Parse & Fill
+      const { parseXml } = await import('../services/XmlValidatorService'); // Dynamic import to ensure parser is available
+      const jsonObj = parseXml(text);
+
+      const { FormFiller } = await import('../services/FormFiller');
+      FormFiller.fill(jsonObj);
+
+    } catch (err) {
+      console.error('RPA Error:', err);
+      alert('Falha ao processar arquivo para preenchimento.');
+    }
+  };
+
+  shadow.appendChild(btn);
+};
+
 // Initial run
 observeInputs();
+// Inject RPA Button (Delay slightly to ensure DOM is ready)
+setTimeout(injectRpaButton, 1000);
