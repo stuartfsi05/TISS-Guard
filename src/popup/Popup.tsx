@@ -61,7 +61,7 @@ const Popup = () => {
                 setActiveTab('verify');
             }
         } else {
-            alert('Chave inválida. Verifique seu código.');
+            alert('Erro (v2): Assinatura Digital Inválida. Verifique se a extensão foi recarregada.');
         }
     };
 
@@ -368,7 +368,6 @@ const Popup = () => {
                                 <p className={`text-[10px] uppercase tracking-wide mt-4 font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Processamento seguro via Asaas</p>
                             </div>
                         </div>
-
                         <div className={`border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                             <p className={`text-xs font-bold uppercase tracking-widest mb-4 text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Possui um código?</p>
                             <div className="flex gap-2">
@@ -376,7 +375,7 @@ const Popup = () => {
                                     type="text"
                                     value={licenseKey}
                                     onChange={(e) => setLicenseKey(e.target.value)}
-                                    placeholder="TISS-PRO-XXXX-XXXX"
+                                    placeholder="Cole sua chave de licença aqui..."
                                     className={`flex-1 px-4 py-3 border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition font-medium
                                         ${isDark ? 'bg-[#0f172a] border-slate-700 text-white placeholder-slate-600' : 'bg-white border-slate-300 placeholder-slate-400 text-slate-900'}`}
                                 />

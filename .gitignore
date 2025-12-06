@@ -127,3 +127,5 @@ Desktop.ini
 *.iml
 
 vite.config.ts.timestamp*
+
+private.key
