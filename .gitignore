@@ -125,3 +125,5 @@ Desktop.ini
 # IntelliJ / JetBrains
 .idea/
 *.iml
+
+vite.config.ts.timestamp*

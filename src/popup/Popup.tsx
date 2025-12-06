@@ -74,9 +74,11 @@ const Popup = () => {
             <header className={`border-b px-6 py-5 shadow-sm z-20 relative transition-all duration-300 ${isDark ? 'bg-[#1e293b] border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="flex justify-between items-center mb-5">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/30 transform transition-transform hover:rotate-12">
-                            T
-                        </div>
+                        <img
+                            src="/icons/icon48.png"
+                            alt="Logo"
+                            className="w-9 h-9 rounded-xl shadow-lg shadow-blue-500/30 transform transition-transform hover:rotate-12"
+                        />
                         <h1 className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
                             TISS Guard
                         </h1>
