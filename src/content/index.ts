@@ -167,8 +167,20 @@ const handleFileSelect = async (event: Event) => {
 
   try {
     const text = await file.text();
+    const can = await StorageService.canValidate();
+
+    if (!can) {
+      // Block Usage
+      showErrors(['⚠️ Limite Gratuito Atingido!', 'Sua cota mensal de validações acabou.', 'Por favor, atualize para o plano TISS Guard PRO no ícone da extensão.'], target);
+      return;
+    }
+
     const settings = await StorageService.getSettings();
     const result = validateTiss(text, settings);
+
+    // Count Usage if we actually ran a validation
+    // (Optimistic: we count every specific attempt, or we could count only valid ones? Usually usage is usage)
+    await StorageService.incrementUsage();
 
     if (!result.isValid) {
       // Alert the user
