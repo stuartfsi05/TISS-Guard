@@ -134,8 +134,8 @@ const Popup = () => {
                     <button
                         onClick={() => setActiveTab('verify')}
                         className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-colors duration-200 z-10 relative ${activeTab === 'verify' || activeTab === 'upgrade'
-                                ? (isDark ? 'text-white' : 'text-blue-700')
-                                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
+                            ? (isDark ? 'text-white' : 'text-blue-700')
+                            : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
                             }`}
                     >
                         Verificar
@@ -143,8 +143,8 @@ const Popup = () => {
                     <button
                         onClick={() => setActiveTab('settings')}
                         className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-colors duration-200 z-10 relative ${activeTab === 'settings'
-                                ? (isDark ? 'text-white' : 'text-blue-700')
-                                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
+                            ? (isDark ? 'text-white' : 'text-blue-700')
+                            : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
                             }`}
                     >
                         Opções
@@ -332,16 +332,20 @@ const Popup = () => {
                             ${isDark ? 'bg-[#1e293b] border-slate-700 shadow-black/40' : 'bg-white border-slate-200 shadow-blue-100'}`}>
                             <div className="absolute top-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
                             <div className="p-8">
-                                <div className="flex justify-center items-baseline gap-1 mb-8">
-                                    <span className={`text-sm font-medium self-start mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>R$</span>
-                                    <span className={`text-5xl font-extrabold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>89</span>
-                                    <div className="text-left flex flex-col">
-                                        <span className={`text-lg font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>,90</span>
-                                        <span className={`text-[10px] uppercase font-bold tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/Mês</span>
+                                <div className="text-center mb-6">
+                                    <p className={`text-sm font-bold uppercase tracking-widest mb-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>Plano Mensal</p>
+                                    <div className="flex justify-center items-baseline gap-1">
+                                        <span className={`text-xl font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>R$</span>
+                                        <span className={`text-6xl font-extrabold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>89</span>
+                                        <div className="text-left flex flex-col justify-end">
+                                            <span className={`text-2xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>,90</span>
+                                        </div>
                                     </div>
+                                    <p className={`text-xs font-medium uppercase tracking-wide mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Cobrado mensalmente</p>
                                 </div>
-                                <ul className="text-left space-y-4 mb-8 pl-2">
-                                    {['Validações Ilimitadas', 'Regras TISS Atualizadas', 'Suporte Prioritário', 'Atualizações Automáticas'].map((feat, i) => (
+
+                                <ul className="text-left space-y-4 mb-8 pl-4 border-t border-b py-6 border-dashed border-slate-200 dark:border-slate-700">
+                                    {['Validações Ilimitadas', 'Todas as Regras de TISS', 'Acesso Prioritário', 'Atualizações Inclusas'].map((feat, i) => (
                                         <li key={i} className={`flex items-center gap-3 text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                                             <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
                                                 <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
@@ -355,11 +359,11 @@ const Popup = () => {
                                     href="https://www.asaas.com/c/kohhqsb099d2bg2e"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                                    className="block w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wide"
                                 >
-                                    Assinar Agora
+                                    Assinar Mensalmente
                                 </a>
-                                <p className={`text-[10px] uppercase tracking-wide mt-4 font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Cancelamento a qualquer momento</p>
+                                <p className={`text-[10px] uppercase tracking-wide mt-4 font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Processamento seguro via Asaas</p>
                             </div>
                         </div>
 
