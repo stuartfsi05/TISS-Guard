@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TISS Guard Test Page</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .upload-box {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>TISS Guard Integration Test</h1>
+        <p>This page simulates a medical billing system upload page.</p>
+
+        <div class="upload-box">
+            <h3>Upload TISS XML</h3>
+            <input type="file" id="tiss-upload" accept=".xml">
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button id="add-input-btn">Simulate Dynamic Input (PSA)</button>
+        </div>
+        <div id="dynamic-area"></div>
+    </div>
+
+    <script>
+        document.getElementById('add-input-btn').addEventListener('click', () => {
+            const div = document.createElement('div');
+            div.className = 'upload-box';
+            div.innerHTML = '<h3>Dynamic Upload</h3><input type="file">';
+            document.getElementById('dynamic-area').appendChild(div);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+{
+    "manifest_version": 3,
+    "name": "TISS Guard",
+    "version": "1.0.0",
+    "description": "Validador local de arquivos TISS para faturistas médicos.",
+    "action": {
+        "default_popup": "src/popup/index.html"
+    },
+    "permissions": [
+        "storage"
+    ],
+    "content_scripts": [
+        {
+            "js": [
+                "src/content/index.ts"
+            ],
+            "matches": [
+                "<all_urls>"
+            ],
+            "run_at": "document_end"
+        }
+    ],
+    "background": {
+        "service_worker": "src/background/index.ts",
+        "type": "module"
+    }
+}
