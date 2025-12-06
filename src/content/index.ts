@@ -172,7 +172,9 @@ const handleFileSelect = async (event: Event) => {
 
     if (!result.isValid) {
       // Alert the user
-      showErrors(result.errors, target);
+      // Map the ValidationError objects to strings for the simple display
+      const errorStrings = result.errors.map(e => `${e.message}`);
+      showErrors(errorStrings, target);
     } else {
       console.log('TISS Guard: Arquivo válido');
     }

@@ -1,70 +1,99 @@
 import { XMLParser } from 'fast-xml-parser';
+import { AppSettings, DEFAULT_SETTINGS } from './StorageService';
+
+export interface ValidationError {
+    code: string;
+    message: string;
+    location?: string;
+}
 
 export interface ValidationResult {
     isValid: boolean;
-    errors: string[];
+    errors: ValidationError[];
     message: string;
 }
 
 const parser = new XMLParser({
     ignoreAttributes: false,
-    removeNSPrefix: true, // Remove namespaces (ans: -> tag) to simplify finding tags
+    removeNSPrefix: true,
 });
 
-
-import { AppSettings, DEFAULT_SETTINGS } from './StorageService';
-
 export const validateTiss = (xmlContent: string, settings: AppSettings = DEFAULT_SETTINGS): ValidationResult => {
-    const errors: string[] = [];
+    const errors: ValidationError[] = [];
+
     try {
         const jsonObj = parser.parse(xmlContent);
 
-        // Helper to find a key recursively because the TISS structure is deep
-        // and we don't know the exact root tag name quickly (mensagemTISS, etc)
-        const findAllValues = (obj: any, keyToFind: string): any[] => {
-            let results: any[] = [];
+        // Helper recursive finder
+        const findAllValues = (obj: any, keyToFind: string): { value: any, path: string }[] => {
+            let results: { value: any, path: string }[] = [];
             if (typeof obj !== 'object' || obj === null) return results;
 
             if (keyToFind in obj) {
-                results.push(obj[keyToFind]);
+                results.push({ value: obj[keyToFind], path: keyToFind });
             }
 
             for (const key of Object.keys(obj)) {
-                results = results.concat(findAllValues(obj[key], keyToFind));
+                const childResults = findAllValues(obj[key], keyToFind);
+                // Prepend parent key to path for context (optional, simple for now)
+                results = results.concat(childResults.map(r => ({ ...r, path: `${key} > ${r.path}` })));
             }
             return results;
         };
 
-        // 1. Validate 'numeroGuiaPrestador' existence (Always Mandatory)
-        const numeroGuiaValues = findAllValues(jsonObj, 'numeroGuiaPrestador');
-        if (numeroGuiaValues.length === 0 || numeroGuiaValues.some(v => String(v).trim() === '')) {
-            errors.push('Tag <numeroGuiaPrestador> não encontrada ou está vazia.');
-        }
+        // 1. Regra de Integridade (Campo Obrigatório)
+        // Verifique se a tag numeroGuiaPrestador existe e não está vazia.
+        const numeroGuiaHits = findAllValues(jsonObj, 'numeroGuiaPrestador');
+        const hasValidGuia = numeroGuiaHits.some(hit => String(hit.value).trim() !== '');
 
-        // 2. Validate 'dataAtendimento' (Must not be in the future)
-        if (settings.checkFutureDates) {
-            const dateValues = findAllValues(jsonObj, 'dataAtendimento'); // Format usually YYYY-MM-DD
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            dateValues.forEach(dateStr => {
-                const date = new Date(dateStr);
-                if (!isNaN(date.getTime()) && date > today) {
-                    errors.push(`Data de atendimento futura detectada: ${dateStr}`);
-                }
+        if (!hasValidGuia) {
+            errors.push({
+                code: 'CRITICAL_MISSING_GUIA',
+                message: 'Erro Crítico: A guia não possui número identificador do prestador.',
+                location: 'numeroGuiaPrestador'
             });
         }
 
-        // 3. Validate Monetary Values (Must not be negative)
+        // 2. Regra Temporal (Viagem no Tempo)
+        if (settings.checkFutureDates) {
+            const dateTags = ['dataAtendimento', 'dataExecucao', 'dataEmissao'];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            dateTags.forEach(tag => {
+                const hits = findAllValues(jsonObj, tag);
+                hits.forEach(hit => {
+                    const dateStr = String(hit.value);
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime()) && date > today) {
+                        errors.push({
+                            code: 'DATE_FUTURE_ERROR',
+                            message: `Erro de Data: O procedimento com ${tag} (${dateStr}) consta com data futura.`,
+                            location: hit.path
+                        });
+                    }
+                });
+            });
+        }
+
+        // 3. Regra Financeira (Valor Positivo)
+        // Verifique se algum valor é menor ou igual a zero.
         if (settings.checkNegativeValues) {
-            // Common tags: valorTotal, valorTotalGeral, valorProcessado
-            const moneyTags = ['valorTotal', 'valorTotalGeral', 'valorProcessado', 'valorLiberado'];
+            const moneyTags = ['valorTotal', 'valorTotalGeral', 'valorProcessado', 'valorLiberado', 'valorApresentado'];
             moneyTags.forEach(tag => {
-                const values = findAllValues(jsonObj, tag);
-                values.forEach(val => {
-                    const num = parseFloat(String(val));
-                    if (!isNaN(num) && num < 0) {
-                        errors.push(`Valor monetário negativo detectado na tag <${tag}>: ${val}`);
+                const hits = findAllValues(jsonObj, tag);
+                hits.forEach(hit => {
+                    // Replace comma with dot if pt-BR format, though TISS XML usually uses dot.
+                    // Safe approach: just parse.
+                    const valStr = String(hit.value).replace(',', '.');
+                    const num = parseFloat(valStr);
+
+                    if (!isNaN(num) && num <= 0) {
+                        errors.push({
+                            code: 'FINANCIAL_ZERO_OR_NEGATIVE',
+                            message: `Erro Financeiro: O valor na tag <${tag}> (${hit.value}) não pode ser zero ou negativo.`,
+                            location: hit.path
+                        });
                     }
                 });
             });
@@ -74,20 +103,24 @@ export const validateTiss = (xmlContent: string, settings: AppSettings = DEFAULT
             return {
                 isValid: false,
                 errors: errors,
-                message: 'Falha na validação',
+                message: 'Falha na validação TISS',
             };
         }
 
         return {
             isValid: true,
             errors: [],
-            message: 'Arquivo TISS válido.',
+            message: 'Arquivo TISS válido e íntegro.',
         };
+
     } catch (e) {
         return {
             isValid: false,
-            errors: ['Erro ao ler o arquivo XML. Formato inválido.'],
-            message: 'Erro de Parse',
+            errors: [{
+                code: 'XML_PARSE_ERROR',
+                message: 'O arquivo não é um XML válido ou está corrompido.',
+            }],
+            message: 'Erro de Leitura',
         };
     }
 };

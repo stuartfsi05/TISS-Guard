@@ -82,7 +82,9 @@ const Popup = () => {
                                 {!result.isValid && (
                                     <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
                                         {result.errors.map((error, index) => (
-                                            <li key={index}>{error}</li>
+                                            <li key={index}>
+                                                <span className="font-semibold">[{error.code}]</span> {error.message}
+                                            </li>
                                         ))}
                                     </ul>
                                 )}
