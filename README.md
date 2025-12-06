@@ -1,83 +1,75 @@
-# 🛡️ TISS Guard - O Escudo do Faturamento Médico
+# TISS Guard - Auditoria e Automação de Faturamento TISS
 
-> **"Elimine as glosas antes que elas aconteçam."**
+O **TISS Guard** é uma solução corporativa para navegadores que auditam arquivos TISS (XML) em tempo real e automatiza o preenchimento de guias nos portais das operadoras de saúde.
 
-O **TISS Guard** é uma ferramenta de inteligência artificial que blinda clínicas e hospitais contra perdas financeiras. Ele atua como um "auditor digital" que vive dentro do seu navegador, validando arquivos e preenchendo formulários automaticamente nos portais das operadoras (Unimed, Bradesco, Amil, etc.).
-
----
-
-## 🌟 Por que usar o TISS Guard?
-
-### 1. 🔍 Auditoria em Tempo Real
-Ao tentar enviar um arquivo XML no site da operadora, o TISS Guard intercepta o arquivo **antes do upload ser concluído**. Ele verifica mais de 50 regras de negócio (datas futuras, códigos errados, valores negativos) e bloqueia o envio se houver erros, impedindo que você seja glosado semanas depois.
-
-### 2. 🤖 Robô Preenchedor (RPA)
-Cansado de digitar guias manualmente?
-*   Clique no botão flutuante **"🤖 Preencher TISS"**.
-*   Selecione o arquivo XML gerado pelo seu sistema.
-*   **Mágica:** O robô identifica os campos na tela da operadora e preenche tudo automaticamente em segundos.
-
-### 3. 🔒 Segurança Militar (Processamento Local)
-Diferente de sistemas em nuvem, o TISS Guard opera **100% no seu computador**.
-*   Os dados dos pacientes **NUNCA** saem da sua máquina.
-*   Conformidade total com a **LGPD** e normas da ANS.
-*   Validação TUSS rigorosa (8 dígitos) para garantir conformidade.
+Desenvolvido para clínicas, hospitais e faturistas, o sistema atua preventivamente para garantir a conformidade com as normas da ANS e eliminar erros que causam glosas financeiras.
 
 ---
 
-## 🚀 Como Instalar (Passo a Passo)
+## 📋 Funcionalidades Principais
 
-Como esta é uma ferramenta exclusiva corporativa, a instalação é manual e simples:
+### 1. Auditoria de Arquivos (Validação)
+O sistema intercepta arquivos XML no momento do upload no portal da operadora e realiza uma varredura completa contra regras de negócio:
+*   **Padrão TUSS:** Verifica se os códigos de procedimentos possuem estritamente 8 dígitos.
+*   **Regras Financeiras:** Bloqueia guias com valores zerados ou negativos.
+*   **Consistência Temporal:** Impede o envio de guias com datas futuras.
+*   **Integridade:** Valida a presença de campos obrigatórios (ex: Número da Guia).
 
-1.  **Baixe o Projeto:** Faça o download do arquivo ZIP e extraia em uma pasta (ex: `Área de Trabalho/TISS Guard`).
-2.  **Abra o Chrome:** Digite `chrome://extensions` na barra de endereços.
-3.  **Modo Desenvolvedor:** Ative a chavinha "Modo do desenvolvedor" no canto superior direito.
-4.  **Carregar:** Clique no botão **"Carregar sem compactação"** (Load Unpacked).
-5.  **Selecione:** Escolha a pasta `dist` que está dentro da pasta que você baixou.
+### 2. Automação de Preenchimento (RPA)
+A funcionalidade de **Preenchimento Automático** elimina a digitação manual de guias nos sites das operadoras.
+*   O sistema identifica formulários web compatíveis.
+*   Lê os dados do seu arquivo XML local.
+*   Preenche os campos correspondentes (Guia, Data, Valor, etc.) na tela em segundos.
 
-🎉 **Pronto!** O ícone de escudo azul aparecerá no seu navegador.
-
----
-
-## 📖 Guia de Uso
-
-### 1. Ativando sua Licença
-Ao abrir a extensão pela primeira vez, você verá o painel de bloqueio.
-1.  Insira sua **Chave de Licença** (fornecida pelo administrador).
-2.  Clique em **"Ativar"**.
-3.  O sistema validará a assinatura digitalmente (funciona até sem internet!).
-
-### 2. Validando Arquivos (O Escudo)
-Basta navegar até o portal da operadora (ex: site da Unimed) e tentar anexar um arquivo XML.
-*   ✅ **Se o arquivo estiver correto:** O upload segue normalmente.
-*   ⛔ **Se houver erros:** Um alerta vermelho aparecerá na tela listando o que precisa ser corrigido.
-
-### 3. Usando o Robô (RPA)
-Em páginas de formulário (digitação de guia):
-1.  Procure o botão azul **"🤖 Preencher TISS"** no canto inferior direito.
-2.  Clique e escolha o XML da guia.
-3.  Veja os campos serem preenchidos magicamente (eles ficarão verdes ✅).
+### 3. Privacidade e Segurança (LGPD)
+O TISS Guard opera sob o princípio de **Processamento Local**.
+*   **Sigilo de Dados:** Todas as validações ocorrem na memória do computador do usuário. Nenhum dado de paciente ou faturamento é enviado para servidores externos.
+*   **Licenciamento Seguro:** Utiliza assinaturas digitais criptográficas (ES256) para ativação offline.
 
 ---
 
-## ❓ Perguntas Frequentes (FAQ)
+## ⚙️ Guia de Instalação
 
-**P: Meus dados são enviados para algum servidor?**
-**R:** Não. O TISS Guard processa tudo localmente na memória do seu navegador. Veja o selo "Processamento 100% Local" no rodapé da extensão.
+O TISS Guard é uma extensão de uso restrito e deve ser instalada manualmente no Google Chrome:
 
-**P: O que acontece se eu tentar enviar um arquivo gigante?**
-**R:** O sistema possui um "Circuit Breaker" de segurança. Se o arquivo for maior que 50MB, o processamento é interrompido para não travar seu computador.
+1.  **Baixe o Arquivo:** Faça o download do pacote da extensão (ZIP) e extraia em uma pasta de sua preferência.
+2.  **Acesse o Gerenciador de Extensões:** No Chrome, digite `chrome://extensions` na barra de endereço.
+3.  **Ative o Modo Desenvolvedor:** Ligue a chave "Modo do desenvolvedor" no canto superior direito da tela.
+4.  **Carregue a Extensão:** Clique no botão **"Carregar sem compactação"** (Load Unpacked).
+5.  **Selecione a Pasta:** Navegue e selecione a pasta `dist` localizada dentro dos arquivos extraídos.
 
-**P: A validação TUSS é atualizada?**
-**R:** Sim. O TISS Guard verifica se os códigos de procedimentos possuem estritamente 8 dígitos numéricos, conforme padrão TUSS/ANS vigente.
+O ícone do TISS Guard aparecerá na barra de ferramentas do navegador.
+
+---
+
+## 📖 Manual de Operação
+
+### Ativação da Licença
+1.  Clique no ícone da extensão.
+2.  No primeiro acesso, insira sua **Chave de Licença Corporativa**.
+3.  Clique em **"Ativar"**. O painel de controle será liberado.
+
+### Como Validar um Arquivo TISS
+O processo é automático e integrado ao seu fluxo de trabalho:
+1.  Acesse o portal da operadora de saúde (ex: Unimed, Bradesco).
+2.  Faça o upload do arquivo XML normalmente.
+3.  O TISS Guard analisará o arquivo instantaneamente:
+    *   **Arquivo Válido:** O processo segue sem interrupções.
+    *   **Arquivo Inválido:** Um alerta será exibido na tela listando as inconsistências que precisam ser corrigidas antes do envio.
+
+### Como Usar o Preenchimento Automático
+1.  Em páginas de digitação de guias, localize o botão flutuante **"Preencher TISS"** no canto inferior da tela.
+2.  Clique no botão e selecione o arquivo XML desejado em seu computador.
+3.  O sistema preencherá os campos do formulário automaticamente.
+4.  Verifique os dados e prossiga com a confirmação no portal.
 
 ---
 
-## 📞 Suporte
+## 📞 Suporte Técnico
 
-Precisa de ajuda ou quer relatar um bug?
-Entre em contato com a equipe de engenharia do **Projeto Antigravity**.
+Para dúvidas sobre regras de validação ou suporte técnico:
+*   **Versão:** 1.0.0
+*   **Documentação Técnica:** Consulte a pasta `docs/` no repositório.
 
 ---
-*Versão 1.0.0 (Dezembro/2025)*
-*Build: Stable | Engine: v2.0*
+*© 2025 TISS Guard. Conformidade ANS e Segurança de Dados.*
