@@ -139,7 +139,12 @@ const showErrors = (errors: string[], targetInput: HTMLInputElement) => {
   btnIgnore.parentNode?.replaceChild(newBtnIgnore, btnIgnore);
 
   // Populate errors
-  list.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+  list.innerHTML = ''; // Clear existing
+  errors.forEach(err => {
+    const li = document.createElement('li');
+    li.textContent = err;
+    list.appendChild(li);
+  });
   modal.classList.add('visible');
 
   // Action: Clear Input
