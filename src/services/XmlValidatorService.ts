@@ -29,20 +29,13 @@ export const validateTiss = (xmlContent: string, settings: AppSettings = DEFAULT
 
         // --- Orchestrator Logic ---
         CORE_RULES.forEach(rule => {
-            // Check if rule is enabled in settings
-            // Mapping:
-            // "DATE_FUTURE_ERROR" -> settings.checkFutureDates
-            // "FINANCIAL_ZERO_OR_NEGATIVE" -> settings.checkNegativeValues
-            // "CRITICAL_MISSING_GUIA" -> Always Enabled (Core Integrity)
-
-            let isEnabled = true; // Default for Critical Rules
-            if (rule.id === 'DATE_FUTURE_ERROR') isEnabled = settings.checkFutureDates;
-            if (rule.id === 'FINANCIAL_ZERO_OR_NEGATIVE') isEnabled = settings.checkNegativeValues;
-
-            if (isEnabled) {
-                const ruleErrors = rule.validate(jsonObj);
-                errors = errors.concat(ruleErrors);
+            // Generic Check: If rule is linked to a setting, verify if it's enabled
+            if (rule.settingKey && !settings[rule.settingKey]) {
+                return; // Rule disabled by user
             }
+
+            const ruleErrors = rule.validate(jsonObj);
+            errors = errors.concat(ruleErrors);
         });
 
         if (errors.length > 0) {
