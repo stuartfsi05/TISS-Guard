@@ -9,6 +9,9 @@ export interface AppSettings {
     };
 }
 
+import * as jose from 'jose';
+import { PUBLIC_LICENSE_KEY } from '../constants/LicenseKey';
+
 export const DEFAULT_SETTINGS: AppSettings = {
     checkFutureDates: true,
     checkNegativeValues: true,
@@ -64,13 +67,28 @@ export const StorageService = {
     },
 
     setPremiumStatus: async (token: string): Promise<boolean> => {
-        // Simulating API verification
-        if (token === 'PRO_USER_2025') {
-            const settings = await StorageService.getSettings();
-            settings.isPremium = true;
-            await StorageService.saveSettings(settings);
-            return true;
+        try {
+            // Import Key efficiently
+            const publicKey = await jose.importSPKI(PUBLIC_LICENSE_KEY, 'ES256');
+
+            // Verify Token
+            const { payload } = await jose.jwtVerify(token, publicKey, {
+                algorithms: ['ES256']
+            });
+
+            // Check specific claims if needed (e.g., expiration is checked automatically by jose)
+            if (payload.type === 'pro') {
+                const settings = await StorageService.getSettings();
+                settings.isPremium = true;
+                await StorageService.saveSettings(settings);
+                return true;
+            }
+            return false;
+        } catch (e: any) {
+            console.error("Validação de licença falhou:", e);
+            // Temporary Debug: Show error to user
+            if (typeof alert !== 'undefined') alert(`Erro Técnico na Validação: ${e.message}`);
+            return false;
         }
-        return false;
     }
 };
