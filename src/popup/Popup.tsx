@@ -247,21 +247,33 @@ const Popup = () => {
                         </div>
 
                         <p className="text-sm text-slate-600">
-                            Para fins de teste, clique abaixo para simular o pagamento aprovado.
+                            Escolha seu plano acima e desbloqueie agora.
                         </p>
 
-                        <button
-                            onClick={handleUpgradeParams}
-                            className="w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow hover:bg-green-700 transition"
+                        <a
+                            href="https://www.asaas.com/c/kohhqsb099d2bg2e"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow hover:bg-green-700 transition"
                         >
-                            Simular Pagamento (Stripe Bypass)
-                        </button>
+                            Assinar Agora
+                        </a>
+
+                        <div className="pt-4 border-t border-slate-200">
+                            <p className="text-xs text-slate-400 mb-2">Área de Testes (Desenvolvimento)</p>
+                            <button
+                                onClick={handleUpgradeParams}
+                                className="w-full bg-slate-200 text-slate-600 py-2 rounded-lg font-medium text-sm hover:bg-slate-300 transition"
+                            >
+                                Simular Troca de Status
+                            </button>
+                        </div>
 
                         <button
                             onClick={() => setActiveTab('verify')}
-                            className="text-sm text-slate-500 hover:underline"
+                            className="text-sm text-slate-500 hover:underline mt-2"
                         >
-                            Voltar
+                            Voltar para Verificação
                         </button>
                     </div>
                 )}
