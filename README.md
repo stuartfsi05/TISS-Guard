@@ -1,88 +1,90 @@
-# 🛡️ TISS Guard - O Guardião das Guias Médicas
+# 🛡️ TISS Guard - Validador Inteligente de Guias Médicas
 
-**Evite glosas e erros de preenchimento antes mesmo de enviar o arquivo.**
+**Elimine glosas e erros de faturamento antes do envio.**
 
-O **TISS Guard** é uma extensão inteligente para Google Chrome que age como um "corretor automático" para arquivos XML TISS. Ele verifica seus arquivos no exato momento em que você tenta fazer o upload no site da operadora, impedindo que guias com erros (como datas futuras ou valores negativos) sejam enviadas.
-
----
-
-## ✨ O que ele faz por você?
-
-1.  **🔍 Validação Automática**: Ao selecionar um arquivo XML em qualquer site, o TISS Guard o analisa em milissegundos.
-2.  **🚫 Bloqueio de Segurança**: Se houver erros, o upload é bloqueado e uma tela vermelha te avisa o que corrigir.
-3.  **✅ Validação Manual**: Você também pode clicar no ícone da extensão para validar um arquivo avulso sem estar em um site.
-4.  **⚙️ Personalizável**: Você escolhe quais regras quer ativar ou desativar.
+O **TISS Guard** é uma extensão para Google Chrome que blinda seu processo de faturamento. Ele age como um auditor em tempo real para arquivos XML TISS, analisando erros de estrutura, datas e valores no exato momento em que você anexa o arquivo no portal da operadora ou via análise manual.
 
 ---
 
-## 🚀 Como Instalar (Passo a Passo)
+## ✨ Funcionalidades Principais
 
-Como esta ferramenta é um projeto privado/local, você a instala manualmente no Chrome. É super simples:
-
-1.  **Baixe o Projeto**: Clique no botão verde **Code** acima e depois em **Download ZIP**. Extraia a pasta no seu computador.
-    *   *Nota: Se você é desenvolvedor, pode clonar e gerar o build (veja seção técnica abaixo).*
-    
-2.  **Abra as Extensões do Chrome**:
-    *   Digite `chrome://extensions` na barra de endereço do navegador.
-    *   Ou clique no ícone de quebra-cabeça 🧩 -> Gerenciar Extensões.
-
-3.  **Ative o Modo Desenvolvedor**:
-    *   No canto superior direito da tela de extensões, ligue a chave **"Modo do desenvolvedor"**.
-
-4.  **Carregue o TISS Guard**:
-    *   Clique no botão **"Carregar sem compactação"** (Load Unpacked).
-    *   Selecione a pasta `dist` que está dentro do projeto que você baixou.
-    
-**Pronto!** O ícone do TISS Guard aparecerá na sua barra de tarefas. 🎉
+*   **🔍 Validação Automática (Gatekeeper):** Ao fazer upload de um XML em qualquer site, o TISS Guard intercepta e valida o arquivo instantaneamente.
+*   **🚫 Bloqueio de Guias Inválidas:** Impede o envio de arquivos com erros críticos, evitando retrabalho e glosas futuras.
+*   **🌓 Modo Escuro e Alto Contraste:** Interface moderna que se adapta à sua preferência e oferece máxima legibilidade em qualquer ambiente.
+*   **💰 Regras de Negócio TISS:**
+    *   Verificação de IDs obrigatórios.
+    *   Bloqueio de datas de atendimento futuras.
+    *   Alerta para valores monetários negativos.
 
 ---
 
-## 📖 Guia de Uso
+## 💎 Planos e Preços
 
-### Modo Automático (No seu dia a dia)
-1.  Acesse o site da operadora ou portal onde você envia as guias.
-2.  Clique no botão de upload do site e selecione seu **XML TISS**.
-3.  **Se estiver tudo certo:** O arquivo carrega normalmente. Você nem notará a extensão.
-4.  **Se houver erro:** Um alerta vermelho aparecerá na tela listando os problemas.
-    *   **Botão "Limpar Arquivo":** Remove o arquivo inválido para você escolher outro.
-    *   **Botão "Ignorar (Manter)":** Fecha o alerta e permite enviar o arquivo mesmo com erro (use com cautela!).
+O TISS Guard opera no modelo **Freemium**. Você pode testar e usar com limites ou desbloquear todo o potencial.
 
-### Modo Manual (Checagem rápida)
-1.  Clique no ícone do **TISS Guard** na barra do navegador.
-2.  Na aba **Verificar**, clique em "Selecione o arquivo XML".
-3.  O resultado aparecerá instantaneamente: Verde (Válido) ou Vermelho (Com erros).
+### 🆓 Plano Gratuito
+*   Ideal para testes e baixo volume.
+*   **Limite:** 3 validações completas por mês.
+*   Acesso a todas as regras de validação.
 
-### Configurações
-Quer desativar alguma regra?
-1.  Abra a extensão (clique no ícone).
-2.  Vá na aba **Configurações**.
-3.  Marque ou desmarque as opções:
-    *   **Verificar Datas Futuras**: Impede datas de atendimento maiores que hoje.
-    *   **Verificar Valores Negativos**: Impede valores monetários (R$) abaixo de zero.
-    *   *Suas preferências ficam gravadas automaticamente!*
+### 🏆 Plano PRO
+*   **Valor:** R$ 89,90 / mês.
+*   **Validações ILIMITADAS.**
+*   Acesso prioritário a atualizações de regras TISS.
+*   Suporte técnico dedicado.
+
+> **Como assinar?** Quando seu limite expirar, uma tela de bloqueio aparecerá com um link direto para o checkout seguro via Asaas. Após o pagamento, você receberá uma chave de licença (`TISS-PRO-XXXX`) para ativar instantaneamente no painel.
 
 ---
 
-## 🤓 Área Técnica (Para Desenvolvedores)
+## 🚀 Como Instalar
 
-Se você quiser modificar o código fonte:
+Como esta é uma ferramenta exclusiva/privada, a instalação é feita manualmente no navegador Chrome:
 
-### Tecnologias
-*   React + TypeScript + Vite
-*   TailwindCSS (Estilização)
-*   Manifest V3 + Shadow DOM (Isolamento total)
+1.  **Baixe o Projeto:** Faça o download do arquivo ZIP deste repositório e extraia em uma pasta conhecida (ex: Área de Trabalho).
+2.  **Acesse as Extensões:** Digite `chrome://extensions` na barra de endereços.
+3.  **Modo Desenvolvedor:** Ative a chave "Modo do desenvolvedor" no canto superior direito.
+4.  **Carregar:** Clique em **"Carregar sem compactação"** (Load Unpacked) e selecione a pasta `dist` dentro do projeto extraído.
 
-### Comandos
+**Pronto!** O escudo azul do TISS Guard aparecerá na sua barra de extensões.
+
+---
+
+## 📖 Como Usar
+
+### 1. No Portal da Operadora (Automático)
+Basta anexar seu arquivo XML normalmente.
+*   **Se válido:** O fluxo segue sem interrupções.
+*   **Se inválido:** Uma janela de alerta vermelha aparece detalhando os erros. Você pode "Limpar o Arquivo" para corrigir e tentar novamente.
+
+### 2. Validação Manual (Painel)
+Clique no ícone da extensão para abrir o painel de controle de luxo:
+*   **Aba Verificar:** Arraste e solte seu XML ou clique para buscar. Veja o relatório na hora.
+*   **Aba Opções:** Configure regras específicas (ex: desativar verificação de datas futuras) e gerencie sua assinatura.
+*   **Tema:** Clique no ícone de Sol/Lua no topo para alternar entre Modo Claro (Alto Contraste) e Modo Escuro.
+
+---
+
+## 🛠️ Para Desenvolvedores
+
+Stack tecnológica utilizada na construção deste projeto:
+
+*   **Core:** React 18, TypeScript, Vite 5.
+*   **Estilização:** Tailwind CSS (com Design System customizado para High Contrast).
+*   **Extensão:** Manifest V3, Shadow DOM (para injeção isolada de CSS), Chrome Storage API.
+*   **Build System:** CRXJS Vite Plugin.
+
+### Comandos de Build
 ```bash
 # Instalar dependências
 npm install
 
-# Rodar servidor local (HMR)
+# Rodar em modo de desenvolvimento (com HMR)
 npm run dev
 
-# Gerar versão de produção (pasta /dist)
+# Compilar para produção (gera pasta /dist)
 npm run build
 ```
 
 ---
-Feito com ❤️ para facilitar a vida do faturamento médico.
+© 2025 TISS Guard. Feito para simplificar a saúde suplementar.
