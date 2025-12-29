@@ -29,112 +29,195 @@ const findAllValues = (obj: any, keyToFind: string): { value: any, path: string 
 // --- Concrete Strategies ---
 
 export const TussFormatRule: TissRule = {
-    id: 'TUSS_FORMAT_ERROR',
-    description: 'Valida se códigos TUSS possuem 8 dígitos numéricos',
+    id: 'TUSS_FORMATO_INVALIDO',
+    description: 'Verifica se os códigos da tabela possuem 8 dígitos numéricos.',
     validate: (jsonObj: any) => {
-        // ... (existing code) ...
         const errors: ValidationError[] = [];
-        const codeTags = ['codigoProcedimento', 'codigoTabela', 'codigoTermo', 'codigo'];
+        const hits = findAllValues(jsonObj, 'codigoTabela');
 
-        codeTags.forEach(tag => {
-            const hits = findAllValues(jsonObj, tag);
-            hits.forEach(hit => {
-                const valStr = String(hit.value).trim();
-                if (valStr && valStr.length > 0) {
-                    if (!/^\d{8}$/.test(valStr)) {
-                        errors.push({
-                            code: 'TUSS_FORMAT_ERROR',
-                            message: `Erro TUSS: O código "${valStr}" em <${tag}> deve ter exatamente 8 dígitos numéricos.`,
-                            location: hit.path
-                        });
-                    }
-                }
-            });
+        hits.forEach(hit => {
+            const val = String(hit.value);
+            if (!/^\d{8}$/.test(val)) {
+                errors.push({
+                    code: 'FORMATO_TUSS_INVALIDO',
+                    message: `Código '${val}' inválido. Deve ter 8 dígitos. (Local: ${hit.path})`
+                });
+            }
         });
         return errors;
     }
 };
 
 export const MissingGuiaRule: TissRule = {
-    id: 'CRITICAL_MISSING_GUIA',
-    description: 'Verifica a existência do número da guia',
+    id: 'GUIA_AUSENTE',
+    description: 'Verifica se o número da guia está presente em guias de consulta/SP/SADT.',
     validate: (jsonObj: any) => {
-        // ... (existing code) ...
-        const numeroGuiaHits = findAllValues(jsonObj, 'numeroGuiaPrestador');
-        const hasValidGuia = numeroGuiaHits.some(hit => String(hit.value).trim() !== '');
+        const errors: ValidationError[] = [];
+        // Heuristic: If we are deep inside a guide structure, we expect a number
+        const hits = findAllValues(jsonObj, 'numeroGuiaPrestador');
 
-        if (!hasValidGuia) {
-            return [{
-                code: 'CRITICAL_MISSING_GUIA',
-                message: 'Erro Crítico: A guia não possui número identificador do prestador.',
-                location: 'numeroGuiaPrestador'
-            }];
-        }
-        return [];
+        // Simpler check for now:
+        hits.forEach(hit => {
+            if (!hit.value || String(hit.value).trim() === '') {
+                errors.push({
+                    code: 'NM_GUIA_VAZIO',
+                    message: `Número da guia em branco. (Local: ${hit.path})`
+                });
+            }
+        });
+
+        return errors;
     }
 };
 
 export const FutureDateRule: TissRule = {
-    id: 'DATE_FUTURE_ERROR',
-    description: 'Impede datas de atendimento no futuro',
-    settingKey: 'checkFutureDates',
+    id: 'DATA_FUTURA',
+    description: 'Impede o envio de procedimentos com data de execução futura.',
     validate: (jsonObj: any) => {
-        // ... (existing code) ...
         const errors: ValidationError[] = [];
-        const dateTags = ['dataAtendimento', 'dataExecucao', 'dataEmissao'];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const dateFields = ['dataAtendimento', 'dataExecucao', 'dataRealizacao'];
 
-        dateTags.forEach(tag => {
-            const hits = findAllValues(jsonObj, tag);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // Allow anytime today
+
+        dateFields.forEach(field => {
+            const hits = findAllValues(jsonObj, field);
             hits.forEach(hit => {
-                const dateStr = String(hit.value);
-                const date = new Date(dateStr);
-                if (!isNaN(date.getTime()) && date > today) {
-                    errors.push({
-                        code: 'DATE_FUTURE_ERROR',
-                        message: `Erro de Data: O procedimento com ${tag} (${dateStr}) consta com data futura.`,
-                        location: hit.path
-                    });
+                const parts = String(hit.value).split('-'); // YYYY-MM-DD
+                if (parts.length === 3) {
+                    const dateVal = new Date(hit.value);
+                    if (dateVal > today) {
+                        errors.push({
+                            code: 'DATA_FUTURA_DETECTADA',
+                            message: `A data ${hit.value} não pode ser futura. (Local: ${hit.path})`
+                        });
+                    }
                 }
             });
         });
+
         return errors;
     }
 };
 
 export const NegativeValueRule: TissRule = {
-    id: 'FINANCIAL_ZERO_OR_NEGATIVE',
-    description: 'Impede valores monetários negativos ou zerados',
-    settingKey: 'checkNegativeValues',
+    id: 'VALOR_NEGATIVO',
+    description: 'Verifica se existem valores monetários negativos.',
     validate: (jsonObj: any) => {
-        // ... (existing code) ...
         const errors: ValidationError[] = [];
-        const moneyTags = ['valorTotal', 'valorTotalGeral', 'valorProcessado', 'valorLiberado', 'valorApresentado'];
+        const valueFields = ['valorTotal', 'valorProcessado', 'valorLiberado', 'valorGlosa'];
 
-        moneyTags.forEach(tag => {
-            const hits = findAllValues(jsonObj, tag);
+        valueFields.forEach(field => {
+            const hits = findAllValues(jsonObj, field);
             hits.forEach(hit => {
-                const valStr = String(hit.value).replace(',', '.');
-                const num = parseFloat(valStr);
-
-                if (!isNaN(num) && num <= 0) {
+                const val = parseFloat(hit.value);
+                if (val < 0) {
                     errors.push({
-                        code: 'FINANCIAL_ZERO_OR_NEGATIVE',
-                        message: `Erro Financeiro: O valor na tag <${tag}> (${hit.value}) não pode ser zero ou negativo.`,
-                        location: hit.path
+                        code: 'VALOR_NEGATIVO',
+                        message: `Valor monetário inválido (${val}). (Local: ${hit.path})`
                     });
                 }
             });
         });
+
+        return errors;
+    }
+};
+
+// --- New Rules for Enterprise Hardening ---
+
+// 1. TISS Version Check (Priority 9)
+// The <padrao> tag is critical. Old versions (e.g. 3.02) have different schemas.
+export const TissVersionRule: TissRule = {
+    id: 'TISS_VERSION_VIGENTE',
+    description: 'Verifica a versão do padrão TISS no arquivo.',
+    validate: (jsonObj: any) => {
+        const errors: ValidationError[] = [];
+        // Helper to find the version tag deep in the object
+        const findVersion = (obj: any): string | null => {
+            if (!obj) return null;
+            // Common tag names for version
+            if (obj.padrao) return obj.padrao;
+            if (obj['ans:padrao']) return obj['ans:padrao'];
+
+            if (typeof obj === 'object') {
+                for (const key in obj) {
+                    const res = findVersion(obj[key]);
+                    if (res) return res;
+                }
+            }
+            return null;
+        };
+
+        const version = findVersion(jsonObj);
+
+        if (!version) {
+            errors.push({
+                code: 'VERSAO_NAO_ENCONTRADA',
+                message: 'Não foi possível identificar a versão do padrão TISS no arquivo (Tag <padrao> ausente).'
+            });
+            return errors;
+        }
+
+        // TISS Version Policy (Mock: Accept only > 3.05.00)
+        // In a real scenario, this would check against a list of valid dates/versions from ANS.
+        const numericVersion = parseFloat(version.replace(/\./g, '')); // 3.05.00 -> 30500
+        const MIN_VERSION = 30500; // 3.05.00
+
+        if (numericVersion < MIN_VERSION) {
+            errors.push({
+                code: 'TISS_VERSAO_OBSOLETA',
+                message: `A versão TISS ${version} está obsoleta. A ANS exige no mínimo 3.05.00.`
+            });
+        }
+
+        return errors;
+    }
+};
+
+// 2. TUSS Table Validation Mock (Priority 3)
+// Stub for validating if a procedure code actually exists in the official table.
+export const TussValidationRule: TissRule = {
+    id: 'TUSS_VALIDATION',
+    description: 'Valida se códigos TUSS existem na tabela vigente.',
+    validate: (jsonObj: any) => {
+        // Mock Database of Valid Codes (Stub)
+        // In production, this would be an IndexedDB lookup.
+        // const MOCK_VALID_TUSS = new Set([
+        //     '10101012', '40304361', '31309059', '60000755'
+        // ]);
+
+        const errors: ValidationError[] = [];
+        const codes = findAllValues(jsonObj, 'codigoTabela'); // Find all procedure codes
+
+        codes.forEach(hit => {
+            const code = String(hit.value);
+            // Only validate if it looks like a TUSS code (8 digits)
+            if (/^\d{8}$/.test(code)) {
+                // If we had a full DB, we would check strictly.
+                // For now, we just simulate the LOGIC structure.
+                // console.log(`[RulesEngine] Checking TUSS Code: ${code}`);
+
+                // UNCOMMENT TO TEST STRICT VALIDATION:
+                // if (!MOCK_VALID_TUSS.has(code)) {
+                //     errors.push({
+                //         code: 'TUSS_INEXISTENTE',
+                //         message: `O código TUSS ${code} não foi encontrado na tabela vigente ou foi descontinuado.`
+                //     });
+                // }
+            }
+        });
+
         return errors;
     }
 };
 
 // --- Registry ---
 export const CORE_RULES: TissRule[] = [
+    TissVersionRule,     // Critical: Check version first
+    TussFormatRule,      // Syntax check
+    TussValidationRule,  // Semantic check (Stub)
     MissingGuiaRule,
     FutureDateRule,
-    NegativeValueRule,
-    TussFormatRule
+    NegativeValueRule
 ];

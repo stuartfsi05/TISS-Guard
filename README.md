@@ -6,9 +6,11 @@
 
 ## 📋 Sobre o Projeto
 
-O envio de arquivos TISS com inconsistências é a principal causa de glosas e atrasos no pagamento por parte das operadoras (Unimed, Bradesco, SulAmérica, etc.).
-
-O **TISS Guard** atua como uma camada de segurança local no seu navegador. Ele audita os arquivos XML em tempo real, garantindo que estejam 100% em conformidade com as regras da ANS antes do envio. Além disso, elimina a digitação manual através de sua funcionalidade de automação inteligente.
+*   **Validação Inteligente:** Verifica regras de negócio da ANS (TISS 3.05+), integridade estrutural e consistência de dados.
+*   **Relatórios de Auditoria:** Gera comprovantes em texto (log) para cada arquivo validado (Download).
+*   **Suporte Enterprise:** Compatível com arquivos **ISO-8859-1** (ERPs Legados) e UTF-8.
+*   **RPA Resiliente:** Preenchimento automático que "lê" a tela do portal (Unimed, Bradesco, etc.) usando heurística avançada.
+*   **Local-First:** Seus dados nunca saem do computador. Proteção total LGPD.
 
 ---
 

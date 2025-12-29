@@ -11,7 +11,7 @@ export interface ValidationError {
 export interface ValidationResult {
     isValid: boolean;
     errors: ValidationError[];
-    message: string;
+    message: string; // "Estrutura TISS Válida" or "Erros na estrutura"
 }
 
 const parser = new XMLParser({

@@ -37,12 +37,71 @@ const Popup = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        const text = await file.text();
-        const validation = validateTiss(text, settings);
-        setResult(validation);
+        // Performance Guard (Priority 7)
+        const MAX_SIZE_MB = 20;
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            const confirm = window.confirm(`O arquivo tem mais de ${MAX_SIZE_MB}MB. A validação pode levar alguns segundos e travar momentaneamente o navegador. Deseja continuar?`);
+            if (!confirm) return;
+        }
 
-        await StorageService.incrementUsage();
-        loadSettings();
+        try {
+            // Enterprise Grade Encoding Detection
+            // 1. Read raw bytes
+            const buffer = await file.arrayBuffer();
+            let text = '';
+
+            try {
+                // 2. Try UTF-8 first (Strict mode)
+                // If the file is ISO-8859-1 with accents, this will likely throw or be invalid
+                const decoder = new TextDecoder('utf-8', { fatal: true });
+                text = decoder.decode(buffer);
+                console.log('[TISS Guard] Encoding detected: UTF-8');
+            } catch (e) {
+                // 3. Fallback to ISO-8859-1 (Latin1) - Standard for legacy Brazilian ERPs
+                console.warn('[TISS Guard] UTF-8 decoding failed, falling back to ISO-8859-1');
+                const decoder = new TextDecoder('iso-8859-1');
+                text = decoder.decode(buffer);
+            }
+
+            const validation = validateTiss(text, settings);
+            setResult(validation);
+
+            await StorageService.incrementUsage();
+            loadSettings();
+        } catch (error) {
+            console.error('Error reading file:', error);
+            setResult({
+                isValid: false,
+                errors: [{ code: 'READ_ERROR', message: 'Erro ao ler arquivo. Verifique se é um XML válido.' }],
+                message: 'Erro de leitura'
+            });
+        }
+    }
+
+
+    // Feature: Download Report (Priority 10)
+    const downloadReport = () => {
+        if (!result) return;
+        const reportContent = `
+RELATÓRIO DE VALIDAÇÃO TISS GUARD
+------------------------------------------------
+Data: ${new Date().toLocaleString()}
+Status: ${result.isValid ? 'APROVADO' : 'REPROVADO'}
+Mensagem: ${result.message}
+
+DETALHAMENTO:
+${result.errors.map(e => `[${e.code}] ${e.message} ${e.location ? `(Local: ${e.location})` : ''}`).join('\n')}
+------------------------------------------------
+Gerado por TISS Guard Enterprise
+        `;
+        const blob = new Blob([reportContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio-tiss-${new Date().getTime()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     };
 
     const isDark = settings.theme === 'dark';
@@ -199,19 +258,28 @@ const Popup = () => {
                                             ${isDark ? 'bg-slate-950/50 border-red-900/30' : 'bg-slate-50 border-red-100'}`}>
                                             <ul className="space-y-2.5">
                                                 {result.errors.map((error, index) => (
-                                                    <li key={index} className="flex gap-3 text-sm items-start group">
-                                                        <span className={`font-mono font-bold px-1.5 py-0.5 rounded text-[10px] mt-0.5 tracking-wider border shrink-0
-                                                            ${isDark ? 'bg-red-950/50 text-red-400 border-red-900/50' : 'bg-white text-red-600 border-red-100 shadow-sm'}`}>
-                                                            {error.code}
-                                                        </span>
-                                                        <span className={`leading-snug font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                                                    <li key={index} className="flex items-start gap-2 text-xs">
+                                                        <span className="mt-0.5 shrink-0 select-none">❌</span>
+                                                        <span className={`${isDark ? 'text-slate-300' : 'text-slate-600'} leading-relaxed`}>
+                                                            <strong className="block text-[10px] uppercase tracking-wider opacity-70 mb-0.5">
+                                                                {error.code}
+                                                            </strong>
                                                             {error.message}
+                                                            {error.location && <span className="block mt-0.5 text-[9px] font-mono opacity-50">{error.location}</span>}
                                                         </span>
                                                     </li>
                                                 ))}
                                             </ul>
                                         </div>
                                     )}
+
+                                    {/* Download Report Button */}
+                                    <button
+                                        onClick={downloadReport}
+                                        className={`w-full mt-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors
+                                            ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>
+                                        📄 Baixar Relatório
+                                    </button>
                                 </div>
                             </div>
                         )}

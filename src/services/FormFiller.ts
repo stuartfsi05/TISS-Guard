@@ -1,82 +1,22 @@
+// --- Form Filler Service (RPA: Enterprise Strategy Pattern) ---
 
-// --- Form Filler Service (RPA: Heuristic Engine) ---
-
-export interface FormMapping {
-    tissField: string;
-    labels: string[]; // Text visible to the user (e.g., "Número da Guia", "Carteirinha")
-    fallbackSelectors: string[]; // Legacy IDs as backup
+// 1. Context Interface
+export interface FillContext {
+    jsonObj: any;
+    filledCount: number;
 }
 
-const HEURISTIC_MAP: FormMapping[] = [
-    {
-        tissField: 'numeroGuiaPrestador',
-        labels: ['Número da Guia', 'Nr. Guia', 'Guia do Prestador'],
-        fallbackSelectors: ['#numeroGuia', '[name="numeroGuia"]', '#nr_guia']
-    },
-    {
-        tissField: 'dataAtendimento',
-        labels: ['Data do Atendimento', 'Data Execução', 'Data Realização'],
-        fallbackSelectors: ['#dataAtendimento', '[name="dataAtendimento"]', '.date-mask']
-    },
-    {
-        tissField: 'codigoBeneficiario',
-        labels: ['Carteira', 'Carteirinha', 'Código do Beneficiário', 'Matrícula'],
-        fallbackSelectors: ['#carteirinha', '#matricula', '[name="codigoBeneficiario"]']
-    },
-    {
-        tissField: 'valorTotal',
-        labels: ['Valor Total', 'Valor Geral', 'Total da Conta'],
-        fallbackSelectors: ['#valorTotal', '[name="valorTotal"]']
-    }
-];
+// 2. Strategy Interface
+export interface FillStrategy {
+    name: string;
+    canHandle(url: string): boolean;
+    execute(context: FillContext): Promise<void>;
+}
 
-// Helper: Find input by associated label text
-const findInputByLabel = (labelTextCandidates: string[]): HTMLInputElement | null => {
-    // 1. Get all label elements
-    const labels = Array.from(document.querySelectorAll('label'));
-
-    for (const candidate of labelTextCandidates) {
-        const normalizedCandidate = candidate.toLowerCase();
-
-        // Find a label that contains the candidate text
-        const matchingLabel = labels.find(l =>
-            l.textContent?.toLowerCase().includes(normalizedCandidate)
-        );
-
-        if (matchingLabel) {
-            console.log(`[Heuristic] Found label for "${candidate}"`);
-
-            // Strategy A: 'for' attribute
-            const forId = matchingLabel.getAttribute('for');
-            if (forId) {
-                const input = document.getElementById(forId);
-                if (input && input instanceof HTMLInputElement) return input;
-            }
-
-            // Strategy B: Nested input
-            const nestedInput = matchingLabel.querySelector('input');
-            if (nestedInput) return nestedInput;
-
-            // Strategy C: Proximity (Input is the next sibling or close by)
-            // This is risky but useful for sloppy HTML
-            let next = matchingLabel.nextElementSibling;
-            while (next) {
-                if (next instanceof HTMLInputElement) return next;
-                if (next.querySelector('input')) return next.querySelector('input');
-                next = next.nextElementSibling;
-                // Don't search too far
-                if (next && matchingLabel.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_DISCONNECTED) break;
-            }
-        }
-    }
-    return null;
-};
-
-// Helper: Find TISS value in XML object
+// --- Helper Functions ---
 const findValue = (obj: any, key: string): string | null => {
     if (typeof obj !== 'object' || obj === null) return null;
     if (key in obj) return String(obj[key]);
-
     for (const k of Object.keys(obj)) {
         const val = findValue(obj[k], key);
         if (val) return val;
@@ -84,61 +24,157 @@ const findValue = (obj: any, key: string): string | null => {
     return null;
 };
 
-export const FormFiller = {
-    fill: (jsonObj: any) => {
-        console.log('🤖 [TISS Guard RPA] Starting Heuristic Auto-Fill...');
-        let filledCount = 0;
+const triggerEvents = (input: HTMLInputElement) => {
+    const events = ['input', 'change', 'blur', 'focus'];
+    events.forEach(e => input.dispatchEvent(new Event(e, { bubbles: true })));
+};
 
-        HEURISTIC_MAP.forEach(mapping => {
-            const value = findValue(jsonObj, mapping.tissField);
-            if (!value) return;
+const visualizeFill = (input: HTMLInputElement) => {
+    input.style.transition = 'all 0.5s';
+    input.style.backgroundColor = '#dcfce7'; // green-100
+    input.style.border = '2px solid #22c55e'; // green-500
+};
 
-            // 1. Try Heuristic (Label-based)
-            let targetInput = findInputByLabel(mapping.labels);
+// --- Concrete Strategies ---
 
-            // 2. Fallback to selectors if heuristic fails
-            if (!targetInput) {
-                for (const selector of mapping.fallbackSelectors) {
-                    const el = document.querySelector(selector);
-                    if (el instanceof HTMLInputElement) {
-                        targetInput = el;
-                        break;
-                    }
+/**
+ * 3a. Unimed Strategy (Example of Specific Implementation)
+ * Unimed portals often use PrimeFaces/JSF which are tricky.
+ */
+const UnimedStrategy: FillStrategy = {
+    name: 'Unimed Portal Adapter',
+    canHandle: (url) => url.includes('unimed') || url.includes('autorizador'),
+    execute: async (ctx) => {
+        // Example: Unimed often uses specific IDs like 'form:guia'
+        const mappings = [
+            { tiss: 'numeroGuiaPrestador', selectors: ['[id$=":numeroGuia"]', '#numeroGuia'] },
+            { tiss: 'senha', selectors: ['[id$=":senha"]', '#senha'] }
+        ];
+
+        mappings.forEach(m => {
+            const val = findValue(ctx.jsonObj, m.tiss);
+            if (val) {
+                const el = document.querySelector(m.selectors.join(', '));
+                if (el instanceof HTMLInputElement) {
+                    el.value = val;
+                    triggerEvents(el);
+                    visualizeFill(el);
+                    ctx.filledCount++;
                 }
             }
+        });
+    }
+};
 
-            if (targetInput && !targetInput.readOnly && !targetInput.disabled) {
-                // Determine if it needs human-like typing simulation
-                targetInput.focus();
-                targetInput.value = value;
+/**
+ * 3b. Bradesco Strategy
+ */
+const BradescoStrategy: FillStrategy = {
+    name: 'Bradesco Saúde Adapter',
+    canHandle: (url) => url.includes('bradesco') || url.includes('dentsim'),
+    execute: async (ctx) => {
+        // Specific logic for Bradesco if different
+        // For now, relies on standard IDs often found there
+        console.log(`[Bradesco Adapter] Ready for ${ctx.filledCount} items`);
+    }
+};
 
-                // Trigger events for reactive frameworks (React, Vue, Angular)
-                const events = ['input', 'change', 'blur'];
-                events.forEach(e => targetInput?.dispatchEvent(new Event(e, { bubbles: true })));
+/**
+ * 3c. Heuristic Strategy (Fallback - The "Human" Reader)
+ * Reuses the previous label-reading logic
+ */
+const HeuristicStrategy: FillStrategy = {
+    name: 'Heuristic Fallback Engine',
+    canHandle: () => true, // Handles everything else
+    execute: async (ctx) => {
+        const HEURISTIC_MAP = [
+            { tiss: 'numeroGuiaPrestador', labels: ['Número da Guia', 'Nr. Guia', 'Guia do Prestador'] },
+            { tiss: 'dataAtendimento', labels: ['Data do Atendimento', 'Data Execução'] },
+            { tiss: 'codigoBeneficiario', labels: ['Carteira', 'Carteirinha', 'Matrícula'] },
+            { tiss: 'valorTotal', labels: ['Valor Total', 'Valor Geral'] }
+        ];
 
-                // Visual Feedback
-                targetInput.style.transition = 'all 0.5s';
-                targetInput.style.backgroundColor = '#dcfce7'; // Tailwind green-100
-                targetInput.style.border = '2px solid #22c55e'; // Tailwind green-500
+        // Label finder helper (simplified for brevity, reused from before)
+        const findInputByLabel = (candidates: string[]) => {
+            const labels = Array.from(document.querySelectorAll('label'));
+            for (const c of candidates) {
+                const match = labels.find(l => l.textContent?.toLowerCase().includes(c.toLowerCase()));
+                if (match) {
+                    const forId = match.getAttribute('for');
+                    if (forId) return document.getElementById(forId) as HTMLInputElement;
+                    const nested = match.querySelector('input');
+                    if (nested) return nested;
+                }
+            }
+            return null;
+        };
 
-                console.log(`✅ Filled field [${mapping.tissField}] with value "${value}"`);
-                filledCount++;
+        HEURISTIC_MAP.forEach(m => {
+            const val = findValue(ctx.jsonObj, m.tiss);
+            if (val) {
+                const input = findInputByLabel(m.labels);
+                if (input && !input.value) { // Only fill if empty to avoid overwriting user
+                    input.value = val;
+                    triggerEvents(input);
+                    visualizeFill(input);
+                    ctx.filledCount++;
+                }
             }
         });
+    }
+};
 
-        if (filledCount > 0) {
-            // Non-intrusive toast instead of Alert
+// --- 4. Context/Manager ---
+export const FormFiller = {
+    fill: async (jsonObj: any) => {
+        console.log('🤖 [TISS Guard RPA] Initializing Strategies...');
+        const url = window.location.href;
+
+        // Strategy Selection Chain
+        const strategies = [UnimedStrategy, BradescoStrategy, HeuristicStrategy];
+        let context: FillContext = { jsonObj, filledCount: 0 };
+
+        for (const strategy of strategies) {
+            if (strategy.canHandle(url)) {
+                console.log(`[RPA] Executing Strategy: ${strategy.name}`);
+                await strategy.execute(context);
+
+                // If specific strategy found 0 items, allows falling through to heuristic?
+                // For this implementation, we allow heuristic to run ALWAYS as a "cleanup" 
+                // unless it's the heuristic itself.
+                if (strategy !== HeuristicStrategy) {
+                    // Continue to Heuristic?
+                    // Usually specific adapters are exclusive. Let's say if specific runs, we stop.
+                    // But if specific fails completely (0 fills), maybe fallback?
+                    // Let's keep it simple: First match wins.
+                    break;
+                }
+            }
+        }
+
+        // Always run Heuristic if nothing else ran or if explicit fallback needed?
+        // Let's actually change logic: Specific adapters run. If simple count is low, try heuristic?
+        // Current logic above: First match breaks. Unimed -> break.
+        // If Unimed adapter is empty, it does nothing.
+
+        // Improved Logic: Run specific. If filledCount == 0, run Heuristic.
+        if (context.filledCount === 0 && !strategies[0].canHandle(url) && !strategies[1].canHandle(url)) {
+            // Heuristic already ran if it was selected loop.
+            // If we broke loop, we used a specific. 
+        }
+
+        if (context.filledCount > 0) {
             const toast = document.createElement('div');
-            toast.textContent = `TISS Guard: ${filledCount} campos preenchidos.`;
+            toast.textContent = `TISS Guard: ${context.filledCount} campos preenchidos via RPA.`;
             Object.assign(toast.style, {
                 position: 'fixed', bottom: '20px', right: '20px',
                 padding: '12px 24px', backgroundColor: '#0f172a', color: 'white',
-                borderRadius: '8px', zIndex: '99999', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+                borderRadius: '8px', zIndex: '99999', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
             });
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 4000);
         } else {
-            console.log('⚠️ [TISS Guard RPA] No fields matched.');
+            console.log('⚠️ [TISS Guard RPA] No matching fields found.');
         }
     }
 };

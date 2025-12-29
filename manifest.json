@@ -31,8 +31,7 @@
                 "*://*.sulamericasaude.com.br/*",
                 "*://*.amil.com.br/*",
                 "*://*.gndi.com.br/*",
-                "*://*.porto.com.br/*",
-                "http://localhost:*/*"
+                "*://*.porto.com.br/*"
             ],
             "run_at": "document_end"
         }
