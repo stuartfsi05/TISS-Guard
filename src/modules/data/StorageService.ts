@@ -1,4 +1,4 @@
-import { AppSettings, DEFAULT_SETTINGS } from '../types';
+import { AppSettings, DEFAULT_SETTINGS } from '../../types';
 export type { AppSettings };
 export { DEFAULT_SETTINGS };
 

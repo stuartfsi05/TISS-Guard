@@ -1,5 +1,8 @@
-import { AppSettings } from '../types';
+import { AppSettings } from '../../types';
 import { ValidationError } from './XmlValidatorService';
+import { REQUIRED_STRUCTURE } from './SchemaDefinitions';
+import { TussDatabaseService } from '../../modules/data/TussDatabaseService';
+import { getVersionStatus } from '../../modules/config/VersionMatrix';
 
 // --- Strategy Interface ---
 export interface TissRule {
@@ -9,7 +12,7 @@ export interface TissRule {
     validate(jsonObj: any): Promise<ValidationError[]> | ValidationError[];
 }
 // ... (imports) ...
-import { TussDatabaseService } from './TussDatabaseService';
+// (Import moved to top)
 
 // ... (existing helper and rules) ...
 
@@ -64,6 +67,24 @@ const findAllValues = (obj: any, keyToFind: string): { value: any, path: string 
     }
     return results;
 };
+
+// Start: Deep Validation Engine
+export const createDependencyRule = (
+    id: string,
+    description: string,
+    condition: (json: any) => boolean,
+    validateFn: (json: any) => ValidationError[]
+): TissRule => ({
+    id,
+    description,
+    validate: (json) => {
+        if (condition(json)) {
+            return validateFn(json);
+        }
+        return [];
+    }
+});
+// End: Deep Validation Engine
 
 // --- Concrete Strategies ---
 
@@ -167,7 +188,7 @@ export const NegativeValueRule: TissRule = {
 
 // 1. TISS Version Check (Priority 9)
 // The <padrao> tag is critical. Old versions (e.g. 3.02) have different schemas.
-import { getVersionStatus } from '../config/VersionMatrix';
+// (Import moved to top)
 
 // ...
 
@@ -219,7 +240,7 @@ export const TissVersionRule: TissRule = {
 // Stub for validating if a procedure code actually exists in the official table.
 
 
-import { REQUIRED_STRUCTURE } from './SchemaDefinitions';
+// (Import moved to top)
 
 // ...
 
@@ -302,12 +323,35 @@ export const StructureRule: TissRule = {
 };
 
 
+// 3. Conditional Rule Example: Dependency Rule
+export const IndicationRule = createDependencyRule(
+    'INDICACAO_CLINICA_OBRIGATORIA',
+    'Exige indicação clínica para exames (Tipo 05).',
+    (json) => {
+        const types = findAllValues(json, 'tipoAtendimento');
+        return types.some(t => String(t.value) === '05');
+    },
+    (json) => {
+        const errors: ValidationError[] = [];
+        const indications = findAllValues(json, 'indicacaoClinica');
+        if (indications.length === 0) {
+            errors.push({
+                code: 'INDICACAO_CLINICA_AUSENTE',
+                message: 'Para exames (Tipo 05), a indicação clínica é obrigatória.'
+            });
+        }
+        return errors;
+    }
+);
+
+
 // --- Registry ---
 export const CORE_RULES: TissRule[] = [
-    TissVersionRule,     // 1. Version
-    StructureRule,       // 2. Structure (Schema)
-    TussFormatRule,      // 3. Syntax
-    TussValidationRule,  // 4. Semantics (DB)
+    TissVersionRule,
+    StructureRule,
+    TussFormatRule,
+    TussValidationRule,
+    IndicationRule,       // New Rule
     MissingGuiaRule,
     FutureDateRule,
     NegativeValueRule

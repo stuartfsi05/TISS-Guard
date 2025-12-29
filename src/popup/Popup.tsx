@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { ValidationResult } from '../services/XmlValidatorService';
-import { runWorkerValidation } from '../services/WorkerClient';
-import { StorageService } from '../services/StorageService';
+import { ValidationResult } from '../modules/validation/XmlValidatorService';
+import { runWorkerValidation } from '../modules/validation/WorkerClient';
+import { StorageService } from '../modules/data/StorageService';
 import { AppSettings, DEFAULT_SETTINGS } from '../types';
-import { sniffXmlEncoding } from '../services/EncodingService';
 import './index.css';
 
 const Popup = () => {
     const [activeTab, setActiveTab] = useState<'verify' | 'settings'>('verify');
     const [result, setResult] = useState<ValidationResult | null>(null);
+    const [loading, setLoading] = useState(false); // Enterprise Loading State
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [isHoveringFile, setIsHoveringFile] = useState(false);
 
@@ -40,46 +40,26 @@ const Popup = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        // Performance Guard (Priority 7)
-        const MAX_SIZE_MB = 20;
-        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-            const confirm = window.confirm(`O arquivo tem mais de ${MAX_SIZE_MB}MB. A validação pode levar alguns segundos e travar momentaneamente o navegador. Deseja continuar?`);
-            if (!confirm) return;
-        }
+        setLoading(true);
+        setResult(null);
 
+        // Enterprise V2.1: Stream Mode (Vision Item 11)
+        // We no longer read the file in Main Thread. We pass the File handle to Worker.
         try {
-            // Enterprise Grade Encoding Detection
-            // 1. Read raw bytes
-            const buffer = await file.arrayBuffer();
-
-            // 2. Sniff Encoding from header/BOM
-            const detectedEncoding = sniffXmlEncoding(buffer);
-            console.log(`[TISS Guard] Encoding detected: ${detectedEncoding}`);
-
-            let text = '';
-            try {
-                // Use detected encoding or fallback to ISO-8859-1 (safer for legacy TISS)
-                const label = ['utf-8', 'utf-16', 'us-ascii'].includes(detectedEncoding) ? detectedEncoding : 'iso-8859-1';
-                const decoder = new TextDecoder(label);
-                text = decoder.decode(buffer);
-            } catch (e) {
-                console.warn('[TISS Guard] Decoding failed, forcing ISO-8859-1');
-                const decoder = new TextDecoder('iso-8859-1');
-                text = decoder.decode(buffer);
-            }
-
-            const validation = await runWorkerValidation(text, settings);
+            const validation = await runWorkerValidation(file, settings);
             setResult(validation);
 
             await StorageService.incrementUsage();
             loadSettings();
         } catch (error) {
-            console.error('Error reading file:', error);
+            console.error('Worker Error:', error);
             setResult({
                 isValid: false,
-                errors: [{ code: 'READ_ERROR', message: 'Erro ao ler arquivo. Verifique se é um XML válido.' }],
-                message: 'Erro de leitura'
+                errors: [{ code: 'WORKER_FAIL', message: 'Falha no Validador (Thread)' }],
+                message: 'Erro Interno'
             });
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -193,6 +173,12 @@ Gerado por TISS Guard Enterprise
             </header>
 
             <main className="flex-grow p-6 overflow-y-auto custom-scrollbar relative z-10">
+                {loading && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3"></div>
+                        <p className="text-indigo-900 text-xs font-bold animate-pulse">Processando XML...</p>
+                    </div>
+                )}
                 {activeTab === 'verify' && (
                     <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div

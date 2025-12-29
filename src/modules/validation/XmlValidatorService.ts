@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { AppSettings, DEFAULT_SETTINGS } from '../types';
+import { AppSettings, DEFAULT_SETTINGS } from '../../types';
 import { CORE_RULES } from './RulesEngine';
 
 export interface ValidationError {

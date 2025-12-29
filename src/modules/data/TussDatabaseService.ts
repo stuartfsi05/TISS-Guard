@@ -8,13 +8,15 @@ const DB_NAME = 'TissGuardDB';
 const STORE_NAME = 'CurrentTussTable'; // Single store for the active table
 const DB_VERSION = 1;
 
+import seedData from './tuss_seed_light.json';
+
 export const TussDatabaseService = {
     db: null as IDBDatabase | null,
 
     async init(): Promise<void> {
         if (this.db) return;
 
-        return new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
             request.onerror = () => reject(request.error);
@@ -31,6 +33,16 @@ export const TussDatabaseService = {
                 }
             };
         });
+
+        // Auto-Seed Check
+        const count = await this.getCount();
+        if (count === 0) {
+            console.log('[TISS Guard] DB Empty. Seeding with default dataset...');
+            // The JSON import might be strict, so we cast if necessary or map
+            const items: TussItem[] = seedData.map(s => ({ code: s.code, description: s.description }));
+            await this.importTable(items);
+            console.log(`[TISS Guard] Seed complete. ${items.length} codes imported.`);
+        }
     },
 
     async checkCodeExists(code: string): Promise<boolean> {

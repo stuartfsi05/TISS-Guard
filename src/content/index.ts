@@ -1,6 +1,6 @@
-import { validateTiss } from '../services/XmlValidatorService';
-import { StorageService } from '../services/StorageService';
-import { PortalScraper } from '../services/PortalScraper';
+import { validateTiss } from '../modules/validation/XmlValidatorService';
+import { StorageService } from '../modules/data/StorageService';
+import { PortalScraper } from '../modules/rpa/PortalScraper';
 
 
 
@@ -297,10 +297,10 @@ const injectRpaButton = () => {
       }
 
       // 2. Parse & Fill
-      const { parseXml } = await import('../services/XmlValidatorService'); // Dynamic import to ensure parser is available
+      const { parseXml } = await import('../modules/validation/XmlValidatorService'); // Dynamic import to ensure parser is available
       const jsonObj = parseXml(text);
 
-      const { FormFiller } = await import('../services/FormFiller');
+      const { FormFiller } = await import('../modules/rpa/FormFiller');
       FormFiller.fill(jsonObj);
 
     } catch (err) {
@@ -314,5 +314,21 @@ const injectRpaButton = () => {
 
 // Initial run
 observeInputs();
-// Inject RPA Button (Delay slightly to ensure DOM is ready)
-setTimeout(injectRpaButton, 1000);
+
+// Robust Injection (Priority 2)
+// Instead of a race-condition setTimeout, we watch for the body to be fully loaded
+// and check if we are in a valid state to inject the Fab.
+const initInjection = () => {
+  if (document.body) {
+    injectRpaButton();
+    observer.observe(document.body, { childList: true, subtree: true });
+  } else {
+    // Fallback if script runs at document_start (rare but possible)
+    window.addEventListener('DOMContentLoaded', () => {
+      injectRpaButton();
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+};
+
+initInjection();

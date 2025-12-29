@@ -26,8 +26,9 @@ interface PortalRecipe {
 }
 
 // Import Recipes
-import unimedRecipe from '../config/recipes/unimed.json';
-import bradescoRecipe from '../config/recipes/bradesco.json';
+// Import Recipes
+import unimedRecipe from './recipes/unimed.json';
+import bradescoRecipe from './recipes/bradesco.json';
 
 // --- Helper Functions ---
 const findValue = (obj: any, key: string): string | null => {
@@ -41,8 +42,26 @@ const findValue = (obj: any, key: string): string | null => {
 };
 
 const triggerEvents = (input: HTMLInputElement) => {
+    // Standard events
     const events = ['input', 'change', 'blur', 'focus'];
     events.forEach(e => input.dispatchEvent(new Event(e, { bubbles: true })));
+};
+
+// React/Angular Hack: Force value update bypassing Virtual DOM trackers
+const setNativeValue = (element: HTMLInputElement, value: string) => {
+    const valueSetter = Object.getOwnPropertyDescriptor(element, 'value')?.set;
+    const prototype = Object.getPrototypeOf(element);
+    const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+
+    if (valueSetter && valueSetter !== prototypeValueSetter) {
+        valueSetter.call(element, value);
+    } else if (prototypeValueSetter) {
+        prototypeValueSetter.call(element, value);
+    } else {
+        element.value = value;
+    }
+
+    element.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
 const visualizeFill = (input: HTMLInputElement) => {
@@ -82,7 +101,7 @@ class RecipeStrategy implements FillStrategy {
                 for (const selector of action.selectors) {
                     const el = document.querySelector(selector);
                     if (el instanceof HTMLInputElement) {
-                        el.value = val;
+                        setNativeValue(el, val);
                         triggerEvents(el);
                         visualizeFill(el);
                         ctx.filledCount++;
@@ -141,7 +160,7 @@ const HeuristicStrategy: FillStrategy = {
             if (val) {
                 const input = findInputByLabel(m.labels);
                 if (input && !input.value) { // Only fill if empty to avoid overwriting user
-                    input.value = val;
+                    setNativeValue(input, val);
                     triggerEvents(input);
                     visualizeFill(input);
                     ctx.filledCount++;
