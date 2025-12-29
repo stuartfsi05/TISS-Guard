@@ -70,14 +70,4 @@ No painel da extensão, acesse a aba **"OPÇÕES"** para personalizar as regras 
 
 ---
 
-## 👨‍� Informações Técnicas
-
-Projeto de código aberto (FOSS), construído com tecnologias modernas para garantir performance e segurança.
-
-*   **Tecnologias**: React 18, TypeScript, TailwindCSS, Vite.
-*   **Build**: Para gerar uma nova versão de produção, execute:
-    ```bash
-    npm install && npm run build
-    ```
-
 *Desenvolvido para fortalecer a gestão em saúde suplementar.*
