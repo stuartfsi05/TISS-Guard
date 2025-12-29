@@ -1,102 +1,83 @@
-# TISS Guard - Sistema de Auditoria e Automação Médica
+# TISS Guard - Auditoria e Automação de Faturamento 🛡️
 
-**Versão da Documentação:** 1.0.2 (Atualizada em Dezembro/2025)
-
-O **TISS Guard** é a ferramenta oficial para garantir a qualidade do faturamento médico. Este manual técnico e operacional guia você passo a passo na instalação, uso e manutenção do sistema.
+> **Eficiência e Conformidade.** O TISS Guard é uma extensão gratuita projetada para eliminar glosas e automatizar processos manuais no faturamento médico (Padrão TISS/ANS).
 
 ---
 
-## 🎯 O que o sistema faz?
+## 📋 Sobre o Projeto
 
-O sistema atua como uma camada de inteligência sobre o navegador Google Chrome, oferecendo duas funcionalidades automáticas:
+O envio de arquivos TISS com inconsistências é a principal causa de glosas e atrasos no pagamento por parte das operadoras (Unimed, Bradesco, SulAmérica, etc.).
 
-### 1. 🛡️ O Auditor (Validação XML em Tempo Real)
-*   **O Problema:** Guias enviadas com erros (datas futuras, códigos inexistentes) geram glosas e atrasam o pagamento em meses.
-*   **A Solução:** O TISS Guard intercepta silenciosamente o arquivo XML no momento em que você o anexa no portal da operadora (upload). Ele "lê" o arquivo em milissegundos antes que ele chegue ao servidor do convênio.
-*   **O Resultado:** Se houver erros, o envio é **bloqueado**. Uma janela de alerta vermelha aparece sobre a tela listando exatamente qual linha do arquivo está errada (ex: *"Linha 45: Código TUSS deve ter 8 dígitos"*).
-
-### 2. 🤖 O Autômato (RPA / Preenchimento de Guias)
-*   **O Problema:** Digitar guias manualmente em portais é repetitivo, lento e propenso a erros de digitação.
-*   **A Solução:** O sistema injeta um botão flutuante **"🤖 Preencher TISS"** diretamente na página do formulário da operadora.
-*   **O Resultado:** Ao clicar neste botão e selecionar o arquivo XML do seu computador, o "robô" assume o controle do mouse e teclado, digitando todos os dados (Carteirinha, Nome, Procedimentos, Valores) nos campos corretos do site em questão de segundos.
+O **TISS Guard** atua como uma camada de segurança local no seu navegador. Ele audita os arquivos XML em tempo real, garantindo que estejam 100% em conformidade com as regras da ANS antes do envio. Além disso, elimina a digitação manual através de sua funcionalidade de automação inteligente.
 
 ---
 
-## ⚙️ Guia de Instalação (Usuário Final)
+## ✨ Principais Funcionalidades
 
-*Tempo estimado: 2 minutos.*
+### 1. Auditoria Preventiva (Validação XML)
+Evite o "vaivém" de arquivos. O sistema analisa a estrutura do seu XML instantaneamente e bloqueia o envio caso detecte:
+*   Datas futuras ou inválidas.
+*   Valores negativos ou inconsistentes.
+*   Códigos TUSS fora do padrão (8 dígitos).
+*   Ausência de guias ou dados obrigatórios.
 
-> **Nota:** Se você recebeu apenas o código-fonte, veja a seção "Para Desenvolvedores" no final deste documento primeiro.
+### 2. Automação de Preenchimento (RPA)
+Reduza o trabalho manual. O sistema identifica formulários nos portais das operadoras e injeta um botão **"Preencher TISS"**. Ao selecionar seu arquivo, o TISS Guard preenche automaticamente todos os campos do site, eliminando erros de digitação e economizando horas de trabalho.
 
-1.  **Obter o arquivo:** Localize a pasta `dist` (distribuição) fornecida pela equipe de TI. Salve-a em um local seguro (ex: `C:\Sistemas\TissGuard`).
-2.  **Acessar Extensões:** No Chrome, digite `chrome://extensions` na barra de endereço.
-3.  **Modo Desenvolvedor:** Ative a chave **"Modo do desenvolvedor"** no canto superior direito.
-4.  **Instalar:** Clique no botão **"Carregar sem compactação"** (Load Unpacked).
-5.  **Selecionar:** Na janela que abrir, selecione a pasta `dist` que você salvou.
-
-✅ **Sucesso:** O ícone de um escudo azul aparecerá na barra de ferramentas do navegador.
-
----
-
-## 📖 Manual de Operação
-
-### 1️⃣ Ativação Inicial
-Ao clicar no ícone do escudo pela primeira vez, uma tela de segurança pedirá sua **Chave de Licença**. Insira o código alfanumérico fornecido. O sistema validará a assinatura digitalmente e liberará o uso.
-
-### 2️⃣ Procedimento de Validação (Dia a Dia)
-Não é necessária nenhuma ação ativa. Trabalhe normalmente.
-*   **Cenário A (Arquivo Correto):** Você anexa o XML. O site do convênio carrega a barra de progresso. O envio ocorre. O TISS Guard permanece silente.
-*   **Cenário B (Arquivo com Erro):** Você anexa o XML. Imediatamente, uma caixa de diálogo bloqueia a tela. O envio é cancelado. A lista de erros é exibida.
-    *   *Ação:* Corrija o arquivo no seu sistema de gestão e tente anexar novamente.
-
-### 3️⃣ Procedimento de Automação
-*   Navegue até a tela onde você normalmente digitaria os dados da guia.
-*   Procure no canto inferior direito da tela um botão azul flutuante escrito **"Preencher TISS"**.
-*   Clique nele. Uma janela de seleção de arquivos do Windows abrirá.
-*   Selecione o XML da guia correspondente.
-*   **Observe:** Os campos do site começarão a ser preenchidos sozinhos. Os campos preenchidos com sucesso piscarão em verde para confirmação visual.
+### 3. Privacidade e Segurança Local
+Diferente de validadores online, o TISS Guard opera **exclusivamente no seu computador**. Seus dados e os dados dos seus pacientes nunca saem da sua máquina. O processamento é offline e seguro.
 
 ---
 
-## ❓ Perguntas Frequentes (Troubleshooting)
+## 🚀 Como Instalar
 
-**"O sistema diz que o XML é inválido, mas o convênio aceitou."**
-O TISS Guard é configurado com regras **mais estritas** que alguns convênios para evitar auditorias posteriores.
-*   *Exemplo Comum:* Códigos TUSS com pontos (`10.10.10.12`). A norma oficial exige apenas números (`10101012`). O TISS Guard exigirá a correção para garantir conformidade total.
+*O TISS Guard é uma extensão para Google Chrome e navegadores compatíveis.*
 
-**"O botão de preenchimento sumiu."**
-O botão só aparece se o sistema detectar que a página atual é um formulário médico conhecido. Se estiver na página correta, tecle `F5` para recarregar.
+1.  **Localize o Projeto**: Tenha a pasta do `TISS Guard` salva em seu computador.
+2.  **Acesse as Extensões**: No navegador, digite `chrome://extensions` na barra de endereço e tecle Enter.
+3.  **Ative o Modo Desenvolvedor**: No canto superior direito da tela, ative a chave **"Modo do desenvolvedor"**.
+4.  **Carregue a Extensão**:
+    *   Clique no botão **"Carregar sem compactação"** (Load Unpacked).
+    *   Selecione a pasta `dist` que está dentro da pasta do projeto `TISS Guard`.
+
+✅ **Concluído:** O ícone do escudo azul aparecerá na sua barra de ferramentas.
 
 ---
 
-## 👨‍💻 Para Desenvolvedores (Área Técnica)
+## � Guia de Utilização
 
-Se você baixou este repositório do GitHub e precisa compilar a extensão:
+### Validando um Arquivo (Drag & Drop)
+Para garantir que um arquivo está pronto para envio:
+1.  Clique no ícone do **TISS Guard**.
+2.  Arraste o arquivo XML para a área indicada ou clique para selecionar.
+3.  **Feedback Imediato**:
+    *   **Sucesso (Verde)**: Arquivo validado e pronto para o portal.
+    *   **Atenção (Vermelho)**: Lista detalhada de correções necessárias.
 
-### Stack Tecnológica
-*   **Core:** React 18, TypeScript.
-*   **Build:** Vite 5 (CRXJS Plugin).
-*   **Crypto:** Biblioteca `jose` (ECDSA P-256) para licenciamento.
+### Utilizando a Automação (No Portal)
+1.  Acesse a página de digitação de guias no site da operadora.
+2.  Localize o botão flutuante **"Preencher TISS"** (injetado automaticamente pelo sistema).
+3.  Selecione o arquivo XML correspondente.
+4.  O sistema preencherá os campos da tela automaticamente.
 
-### Comandos de Instalação
-1.  **Instalar Dependências:**
+---
+
+## ⚙️ Configurações Avançadas
+
+No painel da extensão, acesse a aba **"OPÇÕES"** para personalizar as regras de auditoria:
+*   [x] **Bloquear Datas Futuras**: Impede procedimentos com data superior à atual.
+*   [x] **Alertar Valores Negativos**: Monitora inconsistências financeiras nos totais.
+
+---
+
+## 👨‍� Informações Técnicas
+
+Projeto de código aberto (FOSS), construído com tecnologias modernas para garantir performance e segurança.
+
+*   **Tecnologias**: React 18, TypeScript, TailwindCSS, Vite.
+*   **Build**: Para gerar uma nova versão de produção, execute:
     ```bash
-    npm install
+    npm install && npm run build
     ```
-2.  **Rodar Localmente (HMR):**
-    ```bash
-    npm run dev
-    ```
-3.  **Compilar para Produção:**
-    ```bash
-    npm run build
-    ```
-    *Este comando gerará a pasta `/dist` que deve ser carregada no Chrome.*
 
-### Estrutura do Projeto
-*   `src/content`: Scripts injetados nas páginas (RPA, Scraper).
-*   `src/popup`: Interface do painel de controle (React).
-*   `src/services`: Lógica de negócio (RulesEngine, Validator, Crypto).
-
----
-*© 2025 TISS Guard - Engenharia de Dados em Saúde.*
+*Desenvolvido para fortalecer a gestão em saúde suplementar.*

@@ -5,10 +5,9 @@ import { StorageService, AppSettings, DEFAULT_SETTINGS } from '../services/Stora
 import './index.css';
 
 const Popup = () => {
-    const [activeTab, setActiveTab] = useState<'verify' | 'settings' | 'upgrade'>('verify');
+    const [activeTab, setActiveTab] = useState<'verify' | 'settings'>('verify');
     const [result, setResult] = useState<ValidationResult | null>(null);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-    const [licenseKey, setLicenseKey] = useState('');
     const [isHoveringFile, setIsHoveringFile] = useState(false);
 
     useEffect(() => {
@@ -38,12 +37,6 @@ const Popup = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        const can = await StorageService.canValidate();
-        if (!can) {
-            setActiveTab('upgrade');
-            return;
-        }
-
         const text = await file.text();
         const validation = validateTiss(text, settings);
         setResult(validation);
@@ -52,217 +45,195 @@ const Popup = () => {
         loadSettings();
     };
 
-    const handleActivateLicense = async () => {
-        if (licenseKey.trim().startsWith('TISS-PRO-') && licenseKey.trim().length > 10) {
-            const success = await StorageService.setPremiumStatus('PRO_USER_2025');
-            if (success) {
-                alert('Licença Ativada! Obrigado.');
-                loadSettings();
-                setActiveTab('verify');
-            }
-        } else {
-            alert('Erro (v2): Assinatura Digital Inválida. Verifique se a extensão foi recarregada.');
-        }
-    };
-
-    const usagePercent = settings.isPremium ? 100 : (settings.usage.count / 3) * 100;
     const isDark = settings.theme === 'dark';
 
     return (
-        <div className={`w-[400px] h-[600px] flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-[#0f172a] text-slate-100' : 'bg-[#f8fafc] text-slate-800'}`}>
-            {/* Header */}
-            <header className={`border-b px-6 py-5 shadow-sm z-20 relative transition-all duration-300 ${isDark ? 'bg-[#1e293b] border-slate-700' : 'bg-white border-slate-200'}`}>
-                <div className="flex justify-between items-center mb-5">
-                    <div className="flex items-center gap-3">
-                        <img
-                            src="/icons/icon48.png"
-                            alt="Logo"
-                            className="w-9 h-9 rounded-xl shadow-lg shadow-blue-500/30 transform transition-transform hover:rotate-12"
-                        />
-                        <h1 className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                            TISS Guard
-                        </h1>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={toggleTheme}
-                            className={`p-2 rounded-full transition-all duration-300 active:scale-90 border ${isDark ? 'hover:bg-slate-700 text-amber-400 bg-slate-800 border-slate-700' : 'hover:bg-slate-50 text-slate-600 bg-white border-slate-200 shadow-sm'}`}
-                            title={isDark ? "Modo Claro" : "Modo Escuro"}
-                        >
-                            {isDark ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-                            )}
-                        </button>
-                        <div className={`text-[11px] font-bold px-3 py-1 rounded-full border tracking-wide uppercase shadow-sm ${settings.isPremium
-                            ? 'bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 border-amber-200'
-                            : isDark ? 'bg-slate-800 text-slate-300 border-slate-600' : 'bg-white text-slate-700 border-slate-300'
-                            }`}>
-                            {settings.isPremium ? 'Pro' : 'Free'}
-                        </div>
-                    </div>
-                </div>
+        <div className={`w-[400px] h-[600px] flex flex-col font-sans transition-colors duration-500 overflow-hidden relative
+            ${isDark ? 'bg-[#0B1121] text-slate-100' : 'bg-[#F1F5F9] text-slate-800'}`}>
 
-                {/* Usage Bar (Free Only) */}
-                {!settings.isPremium && (
-                    <div className={`mb-5 p-4 rounded-xl border transition-colors ${isDark ? 'bg-[#0f172a] border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                        <div className={`flex justify-between text-xs font-semibold mb-2.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                            <span>Uso Mensal</span>
-                            <span className={settings.usage.count >= 3 ? 'text-red-500 font-bold' : (isDark ? 'text-slate-200' : 'text-slate-800')}>
-                                {settings.usage.count}/3
-                            </span>
-                        </div>
-                        <div className={`w-full rounded-full h-2 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                            <div
-                                className={`h-full rounded-full transition-all duration-500 ease-out ${settings.usage.count >= 3 ? 'bg-red-500' : 'bg-blue-600'}`}
-                                style={{ width: `${Math.min(usagePercent, 100)}%` }}
+            {/* Background Gradients - Static & Subtle */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+                <div className={`absolute -top-20 -left-20 w-80 h-80 rounded-full mix-blend-multiply filter blur-[80px] opacity-25
+                    ${isDark ? 'bg-indigo-900/60' : 'bg-blue-300/60'}`}></div>
+                <div className={`absolute top-0 -right-20 w-80 h-80 rounded-full mix-blend-multiply filter blur-[80px] opacity-25
+                    ${isDark ? 'bg-violet-900/60' : 'bg-purple-300/60'}`}></div>
+            </div>
+
+            {/* Header */}
+            <header className={`px-6 py-5 z-20 relative transition-all duration-300 backdrop-blur-xl border-b shadow-sm
+                ${isDark ? 'bg-[#1e293b]/70 border-slate-700/60 shadow-black/20' : 'bg-white/80 border-slate-200/80 shadow-slate-200/50'}`}>
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="relative group">
+                            <img
+                                src="/icons/icon48.png"
+                                alt="Logo"
+                                className="relative w-10 h-10 rounded-xl shadow-md"
                             />
                         </div>
+                        <div>
+                            <h1 className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+                                TISS Guard
+                            </h1>
+                        </div>
                     </div>
-                )}
+                    <button
+                        onClick={toggleTheme}
+                        className={`p-2.5 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 border backdrop-blur-sm shadow-sm
+                            ${isDark
+                                ? 'bg-slate-800/80 border-slate-600 text-amber-400 hover:bg-slate-700 hover:text-amber-300 shadow-black/30'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 shadow-slate-200'}`}
+                        title={isDark ? "Modo Claro" : "Modo Escuro"}
+                    >
+                        {isDark ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                        )}
+                    </button>
+                </div>
 
                 {/* Tabs */}
-                <div className={`flex p-1.5 rounded-2xl relative transition-colors border ${isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-100 border-slate-300'}`}>
+                <div className={`flex p-1.5 rounded-xl relative transition-all border
+                    ${isDark ? 'bg-[#0f172a] border-slate-700/80' : 'bg-slate-100 border-slate-200/80 shadow-inner'}`}>
                     <div
-                        className={`absolute top-1.5 bottom-1.5 rounded-xl transition-all duration-300 ease-in-out z-0 border
-                        ${isDark ? 'bg-slate-800 border-slate-600 shadow-md' : 'bg-white border-slate-200 shadow-sm'}`}
+                        className={`absolute top-1.5 bottom-1.5 rounded-lg transition-all duration-300 ease-out z-0 shadow
+                        ${isDark
+                                ? 'bg-slate-700 border border-slate-600 shadow-black/40'
+                                : 'bg-white border border-slate-200/60 shadow-slate-200'}`}
                         style={{
-                            left: activeTab === 'verify' || activeTab === 'upgrade' ? '6px' : '50%',
+                            left: activeTab === 'verify' ? '6px' : '50%',
                             width: 'calc(50% - 9px)',
-                            transform: activeTab === 'settings' ? 'translateX(6px)' : 'translateX(0)'
+                            transform: activeTab === 'settings' ? 'translateX(3px)' : 'translateX(0)'
                         }}
                     />
                     <button
                         onClick={() => setActiveTab('verify')}
-                        className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-colors duration-200 z-10 relative ${activeTab === 'verify' || activeTab === 'upgrade'
-                            ? (isDark ? 'text-white' : 'text-blue-700')
-                            : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
-                            }`}
+                        className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10 relative
+                            ${activeTab === 'verify'
+                                ? (isDark ? 'text-white' : 'text-blue-700')
+                                : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700')}`}
                     >
                         Verificar
                     </button>
                     <button
                         onClick={() => setActiveTab('settings')}
-                        className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-colors duration-200 z-10 relative ${activeTab === 'settings'
-                            ? (isDark ? 'text-white' : 'text-blue-700')
-                            : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
-                            }`}
+                        className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 z-10 relative
+                            ${activeTab === 'settings'
+                                ? (isDark ? 'text-white' : 'text-blue-700')
+                                : (isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700')}`}
                     >
                         Opções
                     </button>
                 </div>
             </header>
 
-            <main className="flex-grow p-6 overflow-y-auto custom-scrollbar relative">
+            <main className="flex-grow p-6 overflow-y-auto custom-scrollbar relative z-10">
                 {activeTab === 'verify' && (
-                    <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        {!settings.isPremium && settings.usage.count >= 3 ? (
-                            <div className="flex flex-col items-center justify-center flex-grow text-center">
-                                <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 animate-pulse ${isDark ? 'bg-red-900/20' : 'bg-red-50'}`}>
-                                    <span className="text-5xl">🔒</span>
+                    <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div
+                            className="relative group cursor-pointer"
+                            onMouseEnter={() => setIsHoveringFile(true)}
+                            onMouseLeave={() => setIsHoveringFile(false)}
+                        >
+                            <input
+                                type="file"
+                                accept=".xml"
+                                onChange={handleFileUpload}
+                                className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
+                            />
+
+                            {/* Hover Border Highlight */}
+                            <div className={`absolute -inset-[1px] bg-blue-500/30 rounded-3xl opacity-0 group-hover:opacity-100 transition duration-300`}></div>
+
+                            <div className={`relative border-2 border-dashed rounded-3xl p-10 text-center transition-all duration-300
+                                ${isHoveringFile
+                                    ? (isDark ? 'border-transparent bg-[#1e293b] scale-[1.01] shadow-2xl' : 'border-transparent bg-white scale-[1.01] shadow-xl')
+                                    : (isDark ? 'border-slate-700/60 bg-[#1e293b]/50 hover:bg-[#1e293b]' : 'border-slate-300/80 bg-white/60 hover:bg-white shadow-sm')}
+                                `}>
+                                <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4 text-3xl transition-transform duration-300
+                                    ${isDark
+                                        ? 'bg-gradient-to-br from-slate-700 to-slate-800 text-white border border-slate-600 shadow-black/40'
+                                        : 'bg-gradient-to-br from-blue-50 to-white text-blue-600 border border-blue-100 shadow-blue-100'}`}>
+                                    📂
                                 </div>
-                                <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Limite Atingido</h2>
-                                <p className={`mb-10 max-w-[280px] leading-relaxed font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                                    Você atingiu o limite mensal gratuito. Desbloqueie validações ilimitadas agora.
+                                <h3 className={`font-bold text-lg mb-1 transition-colors ${isHoveringFile ? 'text-blue-600' : (isDark ? 'text-slate-200' : 'text-slate-700')}`}>
+                                    Arraste seu XML
+                                </h3>
+                                <p className={`text-xs font-medium tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    ou clique para selecionar
                                 </p>
-                                <button
-                                    onClick={() => setActiveTab('upgrade')}
-                                    className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                                >
-                                    Desbloquear Tudo
-                                </button>
                             </div>
-                        ) : (
-                            <>
-                                <div
-                                    className="relative group cursor-pointer"
-                                    onMouseEnter={() => setIsHoveringFile(true)}
-                                    onMouseLeave={() => setIsHoveringFile(false)}
-                                >
-                                    <input
-                                        type="file"
-                                        accept=".xml"
-                                        onChange={handleFileUpload}
-                                        className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
-                                    />
-                                    <div className={`border-2 border-dashed rounded-3xl p-10 text-center transition-all duration-300
-                                        ${isHoveringFile
-                                            ? (isDark ? 'border-blue-500 bg-slate-800/80 scale-[1.01]' : 'border-blue-500 bg-blue-50/80 scale-[1.01]')
-                                            : (isDark ? 'border-slate-600 bg-[#1e293b]' : 'border-slate-300 bg-white')}
-                                        `}>
-                                        <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-5 text-3xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6
-                                            ${isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
-                                            📂
-                                        </div>
-                                        <p className={`font-bold text-lg mb-1 transition-colors ${isHoveringFile ? 'text-blue-500' : (isDark ? 'text-slate-200' : 'text-slate-700')}`}>
-                                            Solte seu XML aqui
-                                        </p>
-                                        <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>ou clique para buscar</p>
-                                    </div>
-                                </div>
+                        </div>
 
-                                {result && (
-                                    <div className={`mt-8 rounded-2xl p-6 border shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 
-                                        ${result.isValid
-                                            ? (isDark ? 'bg-green-950/30 border-green-800' : 'bg-white border-green-200 shadow-green-100')
-                                            : (isDark ? 'bg-red-950/30 border-red-800' : 'bg-white border-red-200 shadow-red-100')
-                                        }`}>
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm border ${result.isValid
-                                                ? (isDark ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-100 text-green-700 border-green-200')
-                                                : (isDark ? 'bg-red-900/30 text-red-400 border-red-800' : 'bg-red-100 text-red-700 border-red-200')
+                        {result && (
+                            <div className={`mt-6 rounded-2xl p-0.5 relative animate-in zoom-in-95 duration-500 shadow-xl
+                                ${result.isValid
+                                    ? 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-500/20'
+                                    : 'bg-gradient-to-br from-red-400 to-rose-500 shadow-red-500/20'
+                                }`}>
+                                <div className={`rounded-[14px] p-5 h-full backdrop-blur-3xl
+                                    ${isDark ? 'bg-[#0f172a]' : 'bg-white'}`}>
+
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-lg shrink-0
+                                            ${result.isValid
+                                                ? (isDark ? 'bg-emerald-500/10 text-emerald-400 shadow-emerald-900/20' : 'bg-emerald-50 text-emerald-600 shadow-emerald-100')
+                                                : (isDark ? 'bg-red-500/10 text-red-400 shadow-red-900/20' : 'bg-red-50 text-red-600 shadow-red-100')
+                                            }`}>
+                                            {result.isValid ? "✓" : "!"}
+                                        </div>
+                                        <div>
+                                            <h3 className={`font-bold text-lg leading-tight mb-0.5 ${result.isValid
+                                                ? (isDark ? 'text-emerald-400' : 'text-slate-800')
+                                                : (isDark ? 'text-red-400' : 'text-slate-800')
                                                 }`}>
-                                                {result.isValid ? "✓" : "!"}
-                                            </div>
-                                            <div>
-                                                <h3 className={`font-bold text-lg leading-tight ${result.isValid
-                                                    ? (isDark ? 'text-green-400' : 'text-green-700')
-                                                    : (isDark ? 'text-red-400' : 'text-red-700')
-                                                    }`}>
-                                                    {result.message}
-                                                </h3>
-                                                {result.isValid && <p className={`text-sm mt-0.5 font-medium ${isDark ? 'text-green-500/80' : 'text-green-600/80'}`}>Estrutura verificada com sucesso</p>}
-                                            </div>
+                                                {result.message}
+                                            </h3>
+                                            {result.isValid && <p className={`text-xs font-bold uppercase tracking-wider opacity-90 ${isDark ? 'text-emerald-500' : 'text-emerald-600'}`}>Validado com sucesso</p>}
                                         </div>
-
-                                        {!result.isValid && (
-                                            <div className={`rounded-xl p-4 mt-2 max-h-[220px] overflow-y-auto custom-scrollbar border ${isDark ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                                                <ul className="space-y-3">
-                                                    {result.errors.map((error, index) => (
-                                                        <li key={index} className="flex gap-3 text-sm items-start">
-                                                            <span className={`font-mono font-bold px-1.5 py-0.5 rounded text-[10px] mt-0.5 tracking-wider border ${isDark ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-white text-red-700 border-red-200 shadow-sm'}`}>
-                                                                {error.code}
-                                                            </span>
-                                                            <span className={`leading-snug font-medium ${isDark ? 'text-red-200' : 'text-slate-700'}`}>{error.message}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
                                     </div>
-                                )}
-                            </>
+
+                                    {!result.isValid && (
+                                        <div className={`rounded-xl p-0.5 overflow-hidden border
+                                            ${isDark ? 'bg-slate-900/50 border-red-900/30' : 'bg-red-50/30 border-red-100'}`}>
+                                            <ul className="max-h-[220px] overflow-y-auto custom-scrollbar p-3 space-y-2.5">
+                                                {result.errors.map((error, index) => (
+                                                    <li key={index} className="flex gap-3 text-sm items-start group">
+                                                        <span className={`font-mono font-bold px-1.5 py-0.5 rounded text-[10px] mt-0.5 tracking-wider border shrink-0
+                                                            ${isDark ? 'bg-red-950/40 text-red-400 border-red-900/40' : 'bg-white text-red-600 border-red-100 shadow-sm'}`}>
+                                                            {error.code}
+                                                        </span>
+                                                        <span className={`leading-snug font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                                                            {error.message}
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
 
                 {activeTab === 'settings' && (
-                    <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <h2 className={`text-xs font-bold uppercase tracking-widest pl-1 mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Opções de Validação</h2>
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-500">
+                        <h2 className={`text-[10px] font-extrabold uppercase tracking-[0.2em] pl-1 mb-2 opacity-70 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Regras de Validação</h2>
 
                         {[
-                            { key: 'checkFutureDates', label: 'Datas Futuras', desc: 'Bloquear procedimentos com data futura' },
-                            { key: 'checkNegativeValues', label: 'Valores Negativos', desc: 'Alertar valores totais menores que zero' }
+                            { key: 'checkFutureDates', label: 'Datas Futuras', desc: 'Bloquear procedimentos com data maior que hoje' },
+                            { key: 'checkNegativeValues', label: 'Valores Negativos', desc: 'Alertar se houver valores totais abaixo de zero' }
                         ].map((item) => (
-                            <div key={item.key} className={`flex items-center justify-between p-5 rounded-2xl border transition-all hover:scale-[1.01] shadow-sm
+                            <div key={item.key} className={`group flex items-center justify-between p-4 rounded-xl border transition-all duration-300 hover:scale-[1.01] shadow-sm
                                 ${isDark
-                                    ? 'bg-[#1e293b] border-slate-700 hover:border-slate-600'
-                                    : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-md'
+                                    ? 'bg-[#1e293b]/60 border-slate-700/60 hover:bg-[#1e293b] hover:border-slate-600 hover:shadow-black/20'
+                                    : 'bg-white border-slate-200/80 hover:border-blue-200 hover:shadow-md'
                                 }`}>
                                 <div className="pr-4">
-                                    <span className={`font-bold block text-sm mb-1 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{item.label}</span>
-                                    <span className={`text-xs leading-relaxed block font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</span>
+                                    <span className={`font-bold block text-sm mb-0.5 ${isDark ? 'text-slate-200 group-hover:text-white' : 'text-slate-800 group-hover:text-blue-900'}`}>{item.label}</span>
+                                    <span className={`text-[11px] leading-relaxed block font-medium ${isDark ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-600'}`}>{item.desc}</span>
                                 </div>
 
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -272,130 +243,31 @@ const Popup = () => {
                                         checked={settings[item.key as keyof AppSettings] as boolean}
                                         onChange={() => handleSettingChange(item.key as keyof AppSettings)}
                                     />
-                                    <div className={`w-11 h-6 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 transition-colors border
-                                        ${isDark ? 'bg-slate-700 border-slate-600 peer-checked:bg-blue-600 peer-checked:border-blue-600' : 'bg-slate-200 border-slate-300 peer-checked:bg-blue-600 peer-checked:border-blue-600'}`}></div>
-                                    <div className="absolute top-0.5 left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-all peer-checked:translate-x-full peer-checked:border-white shadow-sm"></div>
+                                    <div className={`w-11 h-6 rounded-full peer transition-all duration-300 border
+                                        ${isDark
+                                            ? 'bg-slate-800 border-slate-600 peer-focus:ring-2 peer-focus:ring-indigo-500/40 peer-checked:bg-indigo-600 peer-checked:border-indigo-500'
+                                            : 'bg-slate-200 border-slate-300 peer-focus:ring-2 peer-focus:ring-blue-400/30 peer-checked:bg-blue-600 peer-checked:border-blue-500'}`}></div>
+                                    <div className="absolute top-1 left-1 bg-white rounded-full h-4 w-4 transition-all duration-300 peer-checked:translate-x-full shadow-sm"></div>
                                 </label>
                             </div>
                         ))}
 
-                        {!settings.isPremium ? (
-                            <div className={`mt-8 p-8 rounded-3xl border text-center relative overflow-hidden group shadow-lg
-                                ${isDark
-                                    ? 'bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700'
-                                    : 'bg-white border-slate-100'
-                                }`}>
-                                <div className={`absolute inset-0 opacity-10 ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}></div>
-                                <div className="absolute top-0 right-0 p-3 opacity-10 transform translate-x-3 -translate-y-3 group-hover:scale-110 transition-transform">
-                                    <span className="text-8xl">🚀</span>
-                                </div>
-                                <h3 className={`font-bold text-lg mb-2 relative ${isDark ? 'text-white' : 'text-blue-900'}`}>Upgrade para Pro</h3>
-                                <p className={`text-sm mb-6 max-w-[200px] mx-auto relative font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Remova limites e tenha prioridade no suporte.</p>
-                                <button
-                                    onClick={() => setActiveTab('upgrade')}
-                                    className="w-full relative py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                                >
-                                    Ver Planos
-                                </button>
-                            </div>
-                        ) : (
-                            <div className={`mt-6 p-6 rounded-2xl border text-center shadow-md
-                                ${isDark
-                                    ? 'bg-[#1e293b] border-green-900/50'
-                                    : 'bg-white border-green-100'
-                                }`}>
-                                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-3 shadow-green-500/40 shadow-lg">
-                                    🌟
-                                </div>
-                                <p className={`text-base font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>Membro Premium</p>
-                                <p className={`text-xs mt-1 font-medium ${isDark ? 'text-green-500/80' : 'text-green-600/80'}`}>Sua conta está ativa e sem limites.</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'upgrade' && (
-                    <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500 pb-6 pt-2">
-                        <button
-                            onClick={() => setActiveTab('verify')}
-                            className={`absolute top-6 left-0 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
-                            title="Voltar"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                        </button>
-
-                        <span className="text-xs font-bold tracking-wider text-blue-500 uppercase mb-2 block">Premium</span>
-                        <h2 className={`text-3xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            Sem Limites.
-                        </h2>
-                        <p className={`text-sm mb-8 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Desbloqueie todo o potencial do TISS Guard.</p>
-
-                        <div className={`rounded-3xl shadow-2xl border overflow-hidden mb-8 relative transform hover:scale-[1.01] transition-transform duration-500
-                            ${isDark ? 'bg-[#1e293b] border-slate-700 shadow-black/40' : 'bg-white border-slate-200 shadow-blue-100'}`}>
-                            <div className="absolute top-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-                            <div className="p-8">
-                                <div className="text-center mb-6">
-                                    <p className={`text-sm font-bold uppercase tracking-widest mb-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>Plano Mensal</p>
-                                    <div className="flex justify-center items-baseline gap-1">
-                                        <span className={`text-xl font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>R$</span>
-                                        <span className={`text-6xl font-extrabold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>89</span>
-                                        <div className="text-left flex flex-col justify-end">
-                                            <span className={`text-2xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>,90</span>
-                                        </div>
-                                    </div>
-                                    <p className={`text-xs font-medium uppercase tracking-wide mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Cobrado mensalmente</p>
-                                </div>
-
-                                <ul className="text-left space-y-4 mb-8 pl-4 border-t border-b py-6 border-dashed border-slate-200 dark:border-slate-700">
-                                    {['Validações Ilimitadas', 'Todas as Regras de TISS', 'Acesso Prioritário', 'Atualizações Inclusas'].map((feat, i) => (
-                                        <li key={i} className={`flex items-center gap-3 text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                                            <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                                                <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                                            </div>
-                                            {feat}
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <a
-                                    href="https://www.asaas.com/c/kohhqsb099d2bg2e"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wide"
-                                >
-                                    Assinar Mensalmente
-                                </a>
-                                <p className={`text-[10px] uppercase tracking-wide mt-4 font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Processamento seguro via Asaas</p>
-                            </div>
-                        </div>
-                        <div className={`border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                            <p className={`text-xs font-bold uppercase tracking-widest mb-4 text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Possui um código?</p>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={licenseKey}
-                                    onChange={(e) => setLicenseKey(e.target.value)}
-                                    placeholder="Cole sua chave de licença aqui..."
-                                    className={`flex-1 px-4 py-3 border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition font-medium
-                                        ${isDark ? 'bg-[#0f172a] border-slate-700 text-white placeholder-slate-600' : 'bg-white border-slate-300 placeholder-slate-400 text-slate-900'}`}
-                                />
-                                <button
-                                    onClick={handleActivateLicense}
-                                    className={`px-6 py-2 text-white rounded-xl font-bold text-sm shadow hover:shadow-lg active:scale-95 transition-all 
-                                        ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-800 hover:bg-slate-900'}`}
-                                >
-                                    Ativar
-                                </button>
-                            </div>
+                        <div className={`mt-4  text-center opacity-60`}>
+                            <p className={`text-[10px] font-bold tracking-widest uppercase ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                                Versão 1.0.0
+                            </p>
                         </div>
                     </div>
                 )}
             </main>
 
             {/* Privacy Assurance Footer */}
-            <div className={`text-[10px] text-center py-2 border-t ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
-                <p>🔒 Processamento 100% Local. Seus dados nunca saem deste computador.</p>
-                <p>Em conformidade com a LGPD e TISS/ANS.</p>
+            <div className={`text-[10px] font-medium text-center py-3 border-t backdrop-blur-xl z-20 relative
+                ${isDark ? 'border-slate-800/80 text-slate-500 bg-[#0B1121]/80' : 'border-slate-200/80 text-slate-400 bg-white/80'}`}>
+                <p className="flex items-center justify-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-500'}`}></span>
+                    Processamento Local • Seguro
+                </p>
             </div>
         </div>
     );

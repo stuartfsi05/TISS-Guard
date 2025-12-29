@@ -18,21 +18,37 @@ const modalStyles = `
     position: fixed;
     top: 20px;
     right: 20px;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   }
   
   .tiss-guard-modal {
-    width: 350px;
-    background: white;
-    border-left: 5px solid #ef4444;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    padding: 16px;
-    border-radius: 6px;
+    width: 380px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 
+        0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(220, 38, 38, 0.2); /* Red tint border */
+    padding: 24px;
+    border-radius: 24px;
     display: none;
     flex-direction: column;
-    gap: 12px;
-    animation: slideIn 0.3s ease-out;
-    border: 1px solid #e5e7eb;
+    gap: 16px;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Decorative Gradient Bar */
+  .tiss-guard-modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(to right, #ef4444, #f87171);
   }
 
   .tiss-guard-modal.visible {
@@ -40,59 +56,95 @@ const modalStyles = `
   }
 
   @keyframes slideIn {
-    from { transform: translateX(120%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from { transform: translateX(120%) scale(0.95); opacity: 0; }
+    to { transform: translateX(0) scale(1); opacity: 1; }
   }
 
   .title {
-    font-weight: 700;
-    color: #b91c1c;
-    font-size: 16px;
+    font-weight: 800;
+    color: #991b1b;
+    font-size: 18px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
+    letter-spacing: -0.02em;
   }
 
   .error-list {
     margin: 0;
-    padding-left: 20px;
-    color: #b91c1c;
-    font-size: 14px;
-    max-height: 200px;
+    padding: 0;
+    list-style: none;
+    max-height: 240px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
+
+  .error-list li {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #b91c1c;
+    font-weight: 500;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .error-list li::before {
+    content: '•';
+    color: #ef4444;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  /* Scrollbar */
+  .error-list::-webkit-scrollbar { width: 6px; }
+  .error-list::-webkit-scrollbar-track { background: transparent; }
+  .error-list::-webkit-scrollbar-thumb { background-color: rgba(239, 68, 68, 0.2); border-radius: 20px; }
 
   .actions {
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
-    margin-top: 4px;
+    gap: 12px;
+    margin-top: 8px;
   }
 
   button {
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 10px 18px;
+    border-radius: 12px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
   }
 
   .btn-clear {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
   }
   .btn-clear:hover {
-    background-color: #fecaca;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 10px -1px rgba(239, 68, 68, 0.4);
   }
+  .btn-clear:active { transform: translateY(0); }
 
   .btn-ignore {
-    background-color: #f3f4f6;
-    color: #374151;
+    background-color: transparent;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
   }
   .btn-ignore:hover {
-    background-color: #e5e7eb;
+    background-color: #f9fafb;
+    color: #374151;
+    border-color: #d1d5db;
   }
 `;
 
@@ -184,20 +236,14 @@ const handleFileSelect = async (event: Event) => {
 
   try {
     const text = await file.text();
-    const can = await StorageService.canValidate();
 
-    if (!can) {
-      // Block Usage
-      showErrors(['⚠️ Limite Gratuito Atingido!', 'Sua cota mensal de validações acabou.', 'Por favor, atualize para o plano TISS Guard PRO no ícone da extensão.'], target);
-      return;
-    }
+    // Removed Limit Check - FOSS Version
 
     const settings = await StorageService.getSettings();
     const result = validateTiss(text, settings);
 
-    // Count Usage if we actually ran a validation
-    // (Optimistic: we count every specific attempt, or we could count only valid ones? Usually usage is usage)
-    await StorageService.incrementUsage();
+    // Optional: Keep tracking internal usage stats if desired, but not for blocking.
+    // await StorageService.incrementUsage(); 
 
     if (!result.isValid) {
       // Alert the user
@@ -248,22 +294,24 @@ const injectRpaButton = () => {
   btn.textContent = '🤖 Preencher TISS';
   btn.style.cssText = `
         position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #2563eb;
+        bottom: 24px;
+        right: 24px;
+        background: linear-gradient(135deg, #3b82f6, #4f46e5);
         color: white;
         border: none;
-        padding: 12px 20px;
+        padding: 14px 24px;
         border-radius: 50px;
-        font-weight: bold;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        font-weight: 700;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         cursor: pointer;
         z-index: 99999;
         font-family: inherit;
-        transition: transform 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: 0.025em;
+        backdrop-filter: blur(4px);
     `;
 
-  btn.onmouseover = () => btn.style.transform = 'scale(1.05)';
+  btn.onmouseover = () => btn.style.transform = 'scale(1.02)';
   btn.onmouseout = () => btn.style.transform = 'scale(1)';
 
   // Hidden File Input for RPA

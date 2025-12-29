@@ -9,13 +9,10 @@ export interface AppSettings {
     };
 }
 
-import * as jose from 'jose';
-import { PUBLIC_LICENSE_KEY } from '../constants/LicenseKey';
-
 export const DEFAULT_SETTINGS: AppSettings = {
     checkFutureDates: true,
     checkNegativeValues: true,
-    isPremium: false,
+    isPremium: true, // Always Premium/Open Source
     theme: 'light',
     usage: {
         count: 0,
@@ -36,6 +33,9 @@ export const StorageService = {
         if (!settings.usage) {
             settings = { ...settings, usage: DEFAULT_SETTINGS.usage };
         }
+
+        // Force Premium for everyone
+        settings.isPremium = true;
 
         // Monthly Reset Check
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -61,33 +61,7 @@ export const StorageService = {
     },
 
     canValidate: async (): Promise<boolean> => {
-        const settings = await StorageService.getSettings();
-        if (settings.isPremium) return true;
-        return settings.usage.count < 3;
-    },
-
-    setPremiumStatus: async (token: string): Promise<boolean> => {
-        try {
-            // Import Key efficiently
-            const publicKey = await jose.importSPKI(PUBLIC_LICENSE_KEY, 'ES256');
-
-            // Verify Token
-            const { payload } = await jose.jwtVerify(token, publicKey, {
-                algorithms: ['ES256']
-            });
-
-            // Check specific claims if needed (e.g., expiration is checked automatically by jose)
-            if (payload.type === 'pro') {
-                const settings = await StorageService.getSettings();
-                settings.isPremium = true;
-                await StorageService.saveSettings(settings);
-                return true;
-            }
-            return false;
-        } catch (e: any) {
-            // Log only generic error message for security
-            console.error("Validação de licença falhou.");
-            return false;
-        }
+        // Always allowed
+        return true;
     }
 };
