@@ -1,4 +1,4 @@
-import { AppSettings } from './StorageService';
+import { AppSettings } from '../types';
 import { ValidationError } from './XmlValidatorService';
 
 // --- Strategy Interface ---
@@ -6,8 +6,47 @@ export interface TissRule {
     id: string;
     description: string;
     settingKey?: keyof AppSettings; // Optional: Link to a specific setting toggle
-    validate(jsonObj: any): ValidationError[];
+    validate(jsonObj: any): Promise<ValidationError[]> | ValidationError[];
 }
+// ... (imports) ...
+import { TussDatabaseService } from './TussDatabaseService';
+
+// ... (existing helper and rules) ...
+
+// 2. TUSS Table Validation Mock (Priority 3 -> Critical Real DB)
+export const TussValidationRule: TissRule = {
+    id: 'TUSS_VALIDATION',
+    description: 'Valida se códigos TUSS existem na tabela vigente (IndexedDB).',
+    validate: async (jsonObj: any) => {
+        const errors: ValidationError[] = [];
+        const hits = findAllValues(jsonObj, 'codigoTabela');
+
+        // Ensure DB is ready
+        await TussDatabaseService.init();
+
+        // We can do this in parallel for performance
+        const checks = hits.map(async (hit) => {
+            const code = String(hit.value);
+            // Only validate if it looks like a TUSS code (8 digits)
+            if (/^\d{8}$/.test(code)) {
+                const exists = await TussDatabaseService.checkCodeExists(code);
+                if (!exists) {
+                    // Check if the table is empty (user hasn't imported yet)
+                    const count = await TussDatabaseService.getCount();
+                    if (count > 0) {
+                        errors.push({
+                            code: 'TUSS_INEXISTENTE',
+                            message: `O código TUSS ${code} não foi encontrado na tabela local. (Local: ${hit.path})`
+                        });
+                    }
+                }
+            }
+        });
+
+        await Promise.all(checks);
+        return errors;
+    }
+};
 
 // --- Utils ---
 // Extracting helper to make rules standalone
@@ -128,6 +167,10 @@ export const NegativeValueRule: TissRule = {
 
 // 1. TISS Version Check (Priority 9)
 // The <padrao> tag is critical. Old versions (e.g. 3.02) have different schemas.
+import { getVersionStatus } from '../config/VersionMatrix';
+
+// ...
+
 export const TissVersionRule: TissRule = {
     id: 'TISS_VERSION_VIGENTE',
     description: 'Verifica a versão do padrão TISS no arquivo.',
@@ -159,15 +202,12 @@ export const TissVersionRule: TissRule = {
             return errors;
         }
 
-        // TISS Version Policy (Mock: Accept only > 3.05.00)
-        // In a real scenario, this would check against a list of valid dates/versions from ANS.
-        const numericVersion = parseFloat(version.replace(/\./g, '')); // 3.05.00 -> 30500
-        const MIN_VERSION = 30500; // 3.05.00
+        const status = getVersionStatus(version);
 
-        if (numericVersion < MIN_VERSION) {
+        if (!status.isValid) {
             errors.push({
                 code: 'TISS_VERSAO_OBSOLETA',
-                message: `A versão TISS ${version} está obsoleta. A ANS exige no mínimo 3.05.00.`
+                message: status.message || `A versão TISS ${version} está obsoleta.`
             });
         }
 
@@ -177,46 +217,97 @@ export const TissVersionRule: TissRule = {
 
 // 2. TUSS Table Validation Mock (Priority 3)
 // Stub for validating if a procedure code actually exists in the official table.
-export const TussValidationRule: TissRule = {
-    id: 'TUSS_VALIDATION',
-    description: 'Valida se códigos TUSS existem na tabela vigente.',
+
+
+import { REQUIRED_STRUCTURE } from './SchemaDefinitions';
+
+// ...
+
+// 3. Structural/Schema Validation (Priority 3 -> Critical)
+// Checks if the XML has the mandatory TISS hierarchy (message -> header -> body)
+export const StructureRule: TissRule = {
+    id: 'ESTRUTURA_INVALIDA',
+    description: 'Verifica a integridade estrutural básica do XML (Schema Lógico).',
     validate: (jsonObj: any) => {
-        // Mock Database of Valid Codes (Stub)
-        // In production, this would be an IndexedDB lookup.
-        // const MOCK_VALID_TUSS = new Set([
-        //     '10101012', '40304361', '31309059', '60000755'
-        // ]);
-
         const errors: ValidationError[] = [];
-        const codes = findAllValues(jsonObj, 'codigoTabela'); // Find all procedure codes
 
-        codes.forEach(hit => {
-            const code = String(hit.value);
-            // Only validate if it looks like a TUSS code (8 digits)
-            if (/^\d{8}$/.test(code)) {
-                // If we had a full DB, we would check strictly.
-                // For now, we just simulate the LOGIC structure.
-                // console.log(`[RulesEngine] Checking TUSS Code: ${code}`);
-
-                // UNCOMMENT TO TEST STRICT VALIDATION:
-                // if (!MOCK_VALID_TUSS.has(code)) {
-                //     errors.push({
-                //         code: 'TUSS_INEXISTENTE',
-                //         message: `O código TUSS ${code} não foi encontrado na tabela vigente ou foi descontinuado.`
-                //     });
-                // }
+        // 1. Check Root
+        let rootKey = '';
+        for (const key of REQUIRED_STRUCTURE.root) {
+            if (key in jsonObj) {
+                rootKey = key;
+                break;
             }
-        });
+        }
+
+        if (!rootKey) {
+            errors.push({
+                code: 'TAG_RAIZ_AUSENTE',
+                message: 'Tag raiz <mensagemTISS> não encontrada. O arquivo não parece ser um XML TISS.'
+            });
+            return errors; // Abort further checks
+        }
+
+        const root = jsonObj[rootKey];
+
+        // 2. Check Header
+        let headerKey = '';
+        for (const key of REQUIRED_STRUCTURE.header) {
+            if (key in root) {
+                headerKey = key;
+                break;
+            }
+        }
+
+        if (!headerKey) {
+            errors.push({
+                code: 'CABECALHO_AUSENTE',
+                message: 'Tag <cabecalho> é obrigatória.'
+            });
+        } else {
+            // Check mandatory properties inside header
+            const header = root[headerKey];
+            REQUIRED_STRUCTURE.headerFields.forEach(field => {
+                let found = false;
+                // Simple check: exact match or namespaced match (ans:field)
+                if (field in header || `ans:${field}` in header) found = true;
+
+                if (!found) {
+                    errors.push({
+                        code: 'CAMPO_CABECALHO_AUSENTE',
+                        message: `Campo obrigatório <${field}> ausente no cabeçalho.`
+                    });
+                }
+            });
+        }
+
+        // 3. Check Body Presence (Prestador, Operadora, etc)
+        let bodyFound = false;
+        for (const key of REQUIRED_STRUCTURE.body) {
+            if (key in root) {
+                bodyFound = true;
+                break;
+            }
+        }
+
+        if (!bodyFound) {
+            errors.push({
+                code: 'CORPO_TISS_AUSENTE',
+                message: 'Nenhum corpo de mensagem identificado (ex: prestadorParaOperadora).'
+            });
+        }
 
         return errors;
     }
 };
 
+
 // --- Registry ---
 export const CORE_RULES: TissRule[] = [
-    TissVersionRule,     // Critical: Check version first
-    TussFormatRule,      // Syntax check
-    TussValidationRule,  // Semantic check (Stub)
+    TissVersionRule,     // 1. Version
+    StructureRule,       // 2. Structure (Schema)
+    TussFormatRule,      // 3. Syntax
+    TussValidationRule,  // 4. Semantics (DB)
     MissingGuiaRule,
     FutureDateRule,
     NegativeValueRule

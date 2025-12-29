@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { validateTiss, ValidationResult } from '../services/XmlValidatorService';
-import { StorageService, AppSettings, DEFAULT_SETTINGS } from '../services/StorageService';
+import { ValidationResult } from '../services/XmlValidatorService';
+import { runWorkerValidation } from '../services/WorkerClient';
+import { StorageService } from '../services/StorageService';
+import { AppSettings, DEFAULT_SETTINGS } from '../types';
+import { sniffXmlEncoding } from '../services/EncodingService';
 import './index.css';
 
 const Popup = () => {
@@ -48,22 +51,24 @@ const Popup = () => {
             // Enterprise Grade Encoding Detection
             // 1. Read raw bytes
             const buffer = await file.arrayBuffer();
-            let text = '';
 
+            // 2. Sniff Encoding from header/BOM
+            const detectedEncoding = sniffXmlEncoding(buffer);
+            console.log(`[TISS Guard] Encoding detected: ${detectedEncoding}`);
+
+            let text = '';
             try {
-                // 2. Try UTF-8 first (Strict mode)
-                // If the file is ISO-8859-1 with accents, this will likely throw or be invalid
-                const decoder = new TextDecoder('utf-8', { fatal: true });
+                // Use detected encoding or fallback to ISO-8859-1 (safer for legacy TISS)
+                const label = ['utf-8', 'utf-16', 'us-ascii'].includes(detectedEncoding) ? detectedEncoding : 'iso-8859-1';
+                const decoder = new TextDecoder(label);
                 text = decoder.decode(buffer);
-                console.log('[TISS Guard] Encoding detected: UTF-8');
             } catch (e) {
-                // 3. Fallback to ISO-8859-1 (Latin1) - Standard for legacy Brazilian ERPs
-                console.warn('[TISS Guard] UTF-8 decoding failed, falling back to ISO-8859-1');
+                console.warn('[TISS Guard] Decoding failed, forcing ISO-8859-1');
                 const decoder = new TextDecoder('iso-8859-1');
                 text = decoder.decode(buffer);
             }
 
-            const validation = validateTiss(text, settings);
+            const validation = await runWorkerValidation(text, settings);
             setResult(validation);
 
             await StorageService.incrementUsage();

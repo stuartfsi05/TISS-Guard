@@ -73,10 +73,4 @@ No painel da extensão, acesse a aba **"OPÇÕES"** para personalizar as regras 
 
 ---
 
-## 📞 Suporte & Customização
-
-O TISS Guard é gratuito para uso geral.
-**Para Clínicas e Hospitais:** Se você precisa de integração direta com seu ERP ou regras personalizadas de glosa:
-*   📧 **Integração Enterprise**: [t.precivalli@gmail.com](mailto:t.precivalli@gmail.com)
-
 *Desenvolvido para fortalecer a gestão em saúde suplementar.*

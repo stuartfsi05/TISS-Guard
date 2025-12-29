@@ -1,12 +1,9 @@
 import { validateTiss } from '../services/XmlValidatorService';
 import { StorageService } from '../services/StorageService';
 import { PortalScraper } from '../services/PortalScraper';
-import { runSelfTest } from '../services/RulesEngine.test';
 
-// Expose diagnostic for audit
-(window as any).tissGuardDiag = runSelfTest;
 
-console.log('TISS Guard Content Script Active. Run window.tissGuardDiag() to test rules.');
+
 
 const HOST_ID = 'tiss-guard-host';
 
@@ -14,7 +11,7 @@ const HOST_ID = 'tiss-guard-host';
 const modalStyles = `
   :host {
     all: initial;
-    z-index: 2147483647; /* Max Z-Index */
+    z-index: 2147483640; /* High but safe Z-Index */
     position: fixed;
     top: 20px;
     right: 20px;
@@ -36,29 +33,11 @@ const modalStyles = `
     flex-direction: column;
     gap: 16px;
     animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
+    position: fixed; /* Fixed for dragging */
     overflow: hidden;
   }
 
-  /* Decorative Gradient Bar */
-  .tiss-guard-modal::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    background: linear-gradient(to right, #ef4444, #f87171);
-  }
-
-  .tiss-guard-modal.visible {
-    display: flex;
-  }
-
-  @keyframes slideIn {
-    from { transform: translateX(120%) scale(0.95); opacity: 0; }
-    to { transform: translateX(0) scale(1); opacity: 1; }
-  }
+  /* ... */
 
   .title {
     font-weight: 800;
@@ -68,85 +47,53 @@ const modalStyles = `
     align-items: center;
     gap: 10px;
     letter-spacing: -0.02em;
+    cursor: grab; /* Draggable indicator */
+    user-select: none;
   }
-
-  .error-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    max-height: 240px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .error-list li {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 13px;
-    color: #b91c1c;
-    font-weight: 500;
-    line-height: 1.4;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .error-list li::before {
-    content: '•';
-    color: #ef4444;
-    font-weight: bold;
-    flex-shrink: 0;
-  }
-
-  /* Scrollbar */
-  .error-list::-webkit-scrollbar { width: 6px; }
-  .error-list::-webkit-scrollbar-track { background: transparent; }
-  .error-list::-webkit-scrollbar-thumb { background-color: rgba(239, 68, 68, 0.2); border-radius: 20px; }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 8px;
-  }
-
-  button {
-    padding: 10px 18px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    letter-spacing: 0.02em;
-  }
-
-  .btn-clear {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
-  }
-  .btn-clear:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 10px -1px rgba(239, 68, 68, 0.4);
-  }
-  .btn-clear:active { transform: translateY(0); }
-
-  .btn-ignore {
-    background-color: transparent;
-    color: #6b7280;
-    border: 1px solid #e5e7eb;
-  }
-  .btn-ignore:hover {
-    background-color: #f9fafb;
-    color: #374151;
-    border-color: #d1d5db;
+  .title:active {
+    cursor: grabbing;
   }
 `;
+
+// Helper: Make Element Draggable
+const makeDraggable = (modal: HTMLElement, handle: HTMLElement) => {
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let initialLeft = 0;
+  let initialTop = 0;
+
+  handle.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = modal.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+
+    // Remove 'right' positioning if set, so left/top takes over
+    modal.style.right = 'auto';
+    modal.style.left = `${initialLeft}px`;
+    modal.style.top = `${initialTop}px`;
+
+    handle.style.cursor = 'grabbing';
+  });
+
+  // Events on window to prevent losing drag if moving fast
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    modal.style.left = `${initialLeft + dx}px`;
+    modal.style.top = `${initialTop + dy}px`;
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+    handle.style.cursor = 'grab';
+  });
+};
 
 // Helper to Create Shadow Host
 const createShadowHost = () => {
@@ -204,6 +151,12 @@ const showErrors = (errors: string[], targetInput: HTMLInputElement) => {
   });
   modal.classList.add('visible');
 
+  // Init Draggable
+  const title = shadow.querySelector('.title') as HTMLElement;
+  if (title) {
+    makeDraggable(modal, title);
+  }
+
   // Action: Clear Input
   newBtnClear.addEventListener('click', () => {
     targetInput.value = ''; // Clear file
@@ -240,7 +193,7 @@ const handleFileSelect = async (event: Event) => {
     // Removed Limit Check - FOSS Version
 
     const settings = await StorageService.getSettings();
-    const result = validateTiss(text, settings);
+    const result = await validateTiss(text, settings);
 
     // Optional: Keep tracking internal usage stats if desired, but not for blocking.
     // await StorageService.incrementUsage(); 
@@ -334,7 +287,7 @@ const injectRpaButton = () => {
 
       // 1. Validate First
       const settings = await StorageService.getSettings();
-      const result = validateTiss(text, settings);
+      const result = await validateTiss(text, settings);
 
       if (!result.isValid) {
         // Show errors using existing mechanism but targeting the RPA input (virtual)

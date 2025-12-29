@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { AppSettings, DEFAULT_SETTINGS } from './StorageService';
+import { AppSettings, DEFAULT_SETTINGS } from '../types';
 import { CORE_RULES } from './RulesEngine';
 
 export interface ValidationError {
@@ -21,22 +21,25 @@ const parser = new XMLParser({
 
 export const parseXml = (content: string) => parser.parse(content);
 
-export const validateTiss = (xmlContent: string, settings: AppSettings = DEFAULT_SETTINGS): ValidationResult => {
+export const validateTiss = async (xmlContent: string, settings: AppSettings = DEFAULT_SETTINGS): Promise<ValidationResult> => {
     let errors: ValidationError[] = [];
 
     try {
         const jsonObj = parser.parse(xmlContent);
 
         // --- Orchestrator Logic ---
-        CORE_RULES.forEach(rule => {
+        for (const rule of CORE_RULES) {
             // Generic Check: If rule is linked to a setting, verify if it's enabled
             if (rule.settingKey && !settings[rule.settingKey]) {
-                return; // Rule disabled by user
+                continue; // Rule disabled by user
             }
 
-            const ruleErrors = rule.validate(jsonObj);
+            // Await execution if rule returns a Promise
+            const result = rule.validate(jsonObj);
+            const ruleErrors = result instanceof Promise ? await result : result;
+
             errors = errors.concat(ruleErrors);
-        });
+        }
 
         if (errors.length > 0) {
             return {
@@ -49,7 +52,7 @@ export const validateTiss = (xmlContent: string, settings: AppSettings = DEFAULT
         return {
             isValid: true,
             errors: [],
-            message: 'Estrutura TISS válida e íntegra.',
+            message: 'Estrutura TISS Válida', // Updated message
         };
 
     } catch (e) {
