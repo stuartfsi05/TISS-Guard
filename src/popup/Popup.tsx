@@ -190,18 +190,18 @@ const Popup = () => {
                                                 }`}>
                                                 {result.message}
                                             </h3>
-                                            {result.isValid && <p className={`text-xs font-bold uppercase tracking-wider opacity-90 ${isDark ? 'text-emerald-500' : 'text-emerald-600'}`}>Validado com sucesso</p>}
+                                            {result.isValid && <p className={`text-xs font-semibold uppercase tracking-wider opacity-80 ${isDark ? 'text-emerald-500' : 'text-emerald-600'}`}>Estrutura TISS Válida</p>}
                                         </div>
                                     </div>
 
                                     {!result.isValid && (
-                                        <div className={`rounded-xl p-0.5 overflow-hidden border
-                                            ${isDark ? 'bg-slate-900/50 border-red-900/30' : 'bg-red-50/30 border-red-100'}`}>
-                                            <ul className="max-h-[220px] overflow-y-auto custom-scrollbar p-3 space-y-2.5">
+                                        <div className={`rounded-xl p-3 max-h-[220px] overflow-y-auto custom-scrollbar border
+                                            ${isDark ? 'bg-slate-950/50 border-red-900/30' : 'bg-slate-50 border-red-100'}`}>
+                                            <ul className="space-y-2.5">
                                                 {result.errors.map((error, index) => (
                                                     <li key={index} className="flex gap-3 text-sm items-start group">
                                                         <span className={`font-mono font-bold px-1.5 py-0.5 rounded text-[10px] mt-0.5 tracking-wider border shrink-0
-                                                            ${isDark ? 'bg-red-950/40 text-red-400 border-red-900/40' : 'bg-white text-red-600 border-red-100 shadow-sm'}`}>
+                                                            ${isDark ? 'bg-red-950/50 text-red-400 border-red-900/50' : 'bg-white text-red-600 border-red-100 shadow-sm'}`}>
                                                             {error.code}
                                                         </span>
                                                         <span className={`leading-snug font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -220,19 +220,19 @@ const Popup = () => {
 
                 {activeTab === 'settings' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-500">
-                        <h2 className={`text-[10px] font-extrabold uppercase tracking-[0.2em] pl-1 mb-2 opacity-70 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Regras de Validação</h2>
+                        <h2 className={`text-[10px] font-extrabold uppercase tracking-[0.2em] pl-1 mb-2 opacity-60 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Regras de Validação</h2>
 
                         {[
                             { key: 'checkFutureDates', label: 'Datas Futuras', desc: 'Bloquear procedimentos com data maior que hoje' },
                             { key: 'checkNegativeValues', label: 'Valores Negativos', desc: 'Alertar se houver valores totais abaixo de zero' }
                         ].map((item) => (
-                            <div key={item.key} className={`group flex items-center justify-between p-4 rounded-xl border transition-all duration-300 hover:scale-[1.01] shadow-sm
+                            <div key={item.key} className={`group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] 
                                 ${isDark
-                                    ? 'bg-[#1e293b]/60 border-slate-700/60 hover:bg-[#1e293b] hover:border-slate-600 hover:shadow-black/20'
-                                    : 'bg-white border-slate-200/80 hover:border-blue-200 hover:shadow-md'
+                                    ? 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600 hover:shadow-lg hover:shadow-black/20'
+                                    : 'bg-white/60 border-white/60 hover:bg-white/90 hover:shadow-lg hover:shadow-indigo-100/50 backdrop-blur-sm'
                                 }`}>
                                 <div className="pr-4">
-                                    <span className={`font-bold block text-sm mb-0.5 ${isDark ? 'text-slate-200 group-hover:text-white' : 'text-slate-800 group-hover:text-blue-900'}`}>{item.label}</span>
+                                    <span className={`font-bold block text-sm mb-0.5 ${isDark ? 'text-slate-200 group-hover:text-white' : 'text-slate-700 group-hover:text-indigo-900'}`}>{item.label}</span>
                                     <span className={`text-[11px] leading-relaxed block font-medium ${isDark ? 'text-slate-400 group-hover:text-slate-300' : 'text-slate-500 group-hover:text-slate-600'}`}>{item.desc}</span>
                                 </div>
 
@@ -243,30 +243,33 @@ const Popup = () => {
                                         checked={settings[item.key as keyof AppSettings] as boolean}
                                         onChange={() => handleSettingChange(item.key as keyof AppSettings)}
                                     />
-                                    <div className={`w-11 h-6 rounded-full peer transition-all duration-300 border
+                                    <div className={`w-10 h-6 rounded-full peer transition-all duration-300 border
                                         ${isDark
-                                            ? 'bg-slate-800 border-slate-600 peer-focus:ring-2 peer-focus:ring-indigo-500/40 peer-checked:bg-indigo-600 peer-checked:border-indigo-500'
-                                            : 'bg-slate-200 border-slate-300 peer-focus:ring-2 peer-focus:ring-blue-400/30 peer-checked:bg-blue-600 peer-checked:border-blue-500'}`}></div>
+                                            ? 'bg-slate-700/50 border-slate-600 peer-focus:ring-2 peer-focus:ring-indigo-500/50 peer-checked:bg-indigo-600 peer-checked:border-indigo-500'
+                                            : 'bg-slate-200 border-slate-300 peer-focus:ring-2 peer-focus:ring-indigo-300 peer-checked:bg-indigo-500 peer-checked:border-indigo-400'}`}></div>
                                     <div className="absolute top-1 left-1 bg-white rounded-full h-4 w-4 transition-all duration-300 peer-checked:translate-x-full shadow-sm"></div>
                                 </label>
                             </div>
                         ))}
 
-                        <div className={`mt-4  text-center opacity-60`}>
+                        <div className={`mt-6 text-center opacity-80`}>
                             <p className={`text-[10px] font-bold tracking-widest uppercase ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                                Versão 1.0.0
+                                Versão 1.0.1 (Stable)
                             </p>
+                            <a href="mailto:t.precivalli@gmail.com" className={`block mt-2 text-xs font-semibold hover:underline ${isDark ? 'text-indigo-400' : 'text-blue-600'}`}>
+                                Precisa de integração customizada?
+                            </a>
                         </div>
                     </div>
                 )}
             </main>
 
             {/* Privacy Assurance Footer */}
-            <div className={`text-[10px] font-medium text-center py-3 border-t backdrop-blur-xl z-20 relative
-                ${isDark ? 'border-slate-800/80 text-slate-500 bg-[#0B1121]/80' : 'border-slate-200/80 text-slate-400 bg-white/80'}`}>
-                <p className="flex items-center justify-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-500'}`}></span>
-                    Processamento Local • Seguro
+            <div className={`text-[9px] text-center py-2.5 border-t backdrop-blur-sm z-20 relative
+                ${isDark ? 'border-slate-800/50 text-slate-500 bg-slate-900/30' : 'border-slate-200/50 text-slate-400 bg-white/30'}`}>
+                <p className="flex items-center justify-center gap-1.5" title="Seus dados nunca saem deste computador">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80"></span>
+                    Processamento 100% Offline (LGPD)
                 </p>
             </div>
         </div>

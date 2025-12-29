@@ -8,52 +8,84 @@ export interface PortalAdapter {
     scrapeErrors(): string[];
 }
 
-// --- Generic Adapter (Fallback) ---
-// Looks for common error classes used in Bootstrap, Material UI, etc.
+// --- Generic Adapter (Heuristic) ---
+// Looks for visible elements containing error keywords or semantic roles
 const GenericAdapter: PortalAdapter = {
-    name: 'Generic',
-    canHandle: (_url: string) => true, // Fallback handles everything
+    name: 'Generic (Heuristic)',
+    canHandle: (_url: string) => true,
     scrapeErrors: () => {
-        const errors: string[] = [];
+        const errors: Set<string> = new Set();
 
-        // Common selectors for error messages
-        const selectors = [
-            '.alert-danger',
-            '.error-message',
-            '.invalid-feedback',
+        // 1. Semantic Selectors (Roles & Accessibility)
+        const semanticSelectors = [
             '[role="alert"]',
-            '.toast-error'
+            '.alert',
+            '.error',
+            '.invalid',
+            '.toast-error',
+            '.msg-erro',
+            '.ui-messages-error'
         ];
 
-        selectors.forEach(selector => {
+        // 2. Keyword Heuristics (Text Content)
+        // Only run this on relatively small containers to avoid full-page scans
+        const potentialContainers = document.querySelectorAll('div, span, p, li');
+
+        // Helper: visible?
+        const isVisible = (el: Element) => {
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        };
+
+        // Scan selectors first
+        semanticSelectors.forEach(selector => {
             document.querySelectorAll(selector).forEach(el => {
-                // Ensure it's visible
-                const style = window.getComputedStyle(el);
-                if (style.display !== 'none' && style.visibility !== 'hidden' && el.textContent) {
+                if (isVisible(el) && el.textContent) {
                     const text = el.textContent.trim();
-                    if (text.length > 0 && !errors.includes(text)) {
-                        errors.push(text);
-                    }
+                    if (text.length > 5 && text.length < 200) errors.add(text);
                 }
             });
         });
 
-        return errors;
+        // Scan for keywords if no obvious alerts found, or to supplement
+        if (errors.size === 0) {
+            potentialContainers.forEach(el => {
+                if (isVisible(el) && el.textContent) {
+                    const text = el.textContent.trim().toLowerCase();
+                    // Keywords that strongly suggest a TISS error
+                    if (
+                        (text.includes('erro') || text.includes('inválid') || text.includes('obrigatório') || text.includes('glosa'))
+                        &&
+                        (text.length < 150) // Errors are usually short
+                        &&
+                        // Heuristic: Error text usually has specific colors (Red)
+                        (window.getComputedStyle(el).color.includes('rgb(2') || // Red component high? Very rough.
+                            window.getComputedStyle(el).color === 'rgb(255, 0, 0)' ||
+                            window.getComputedStyle(el).color.includes('#d32f2f') ||
+                            text.includes('critica')) // 'Critica' is common in TISS
+                    ) {
+                        // Double check it's not just a label
+                        if (el.tagName !== 'LABEL') {
+                            errors.add(el.textContent!.trim());
+                        }
+                    }
+                }
+            });
+        }
+
+        return Array.from(errors);
     }
 };
 
-// --- Unimed Adapter (Example Skeleton) ---
-// Would target specific specific Unimed classes
+// --- Unimed Adapter (Optimized) ---
 const UnimedAdapter: PortalAdapter = {
-    name: 'Unimed',
-    canHandle: (url: string) => url.includes('unimed') || url.includes('autorizador'),
+    name: 'Unimed / TISS',
+    canHandle: (url: string) => url.includes('unimed') || url.includes('tiss') || url.includes('autorizador'),
     scrapeErrors: () => {
-        const errors: string[] = [];
-        // Example Unimed specific selector (hypothetical)
-        document.querySelectorAll('.msg-erro, .ui-messages-error-summary').forEach(el => {
-            if (el.textContent) errors.push(el.textContent.trim());
-        });
-        return errors;
+        // Unimed portals often use PrimeFaces or specific classes
+        // But we rely on GenericAdapter mostly now. 
+        // We can add specific known IDs if strictly needed.
+        return GenericAdapter.scrapeErrors();
     }
 };
 

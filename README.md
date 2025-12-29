@@ -24,8 +24,9 @@ Evite o "vaivém" de arquivos. O sistema analisa a estrutura do seu XML instanta
 ### 2. Automação de Preenchimento (RPA)
 Reduza o trabalho manual. O sistema identifica formulários nos portais das operadoras e injeta um botão **"Preencher TISS"**. Ao selecionar seu arquivo, o TISS Guard preenche automaticamente todos os campos do site, eliminando erros de digitação e economizando horas de trabalho.
 
-### 3. Privacidade e Segurança Local
-Diferente de validadores online, o TISS Guard opera **exclusivamente no seu computador**. Seus dados e os dados dos seus pacientes nunca saem da sua máquina. O processamento é offline e seguro.
+### 3. Privacidade e Segurança Local (LGPD / HIPAA)
+**Arquitetura Local-First**: Diferente de validadores online, o TISS Guard opera **exclusivamente no seu computador**.
+> 🔒 **Aviso de Privacidade:** Nenhum dado de paciente, médico ou conta médica trafega pela internet ou sai da sua máquina. O processamento é 100% offline, garantindo conformidade total com a LGPD.
 
 ---
 
@@ -69,5 +70,11 @@ No painel da extensão, acesse a aba **"OPÇÕES"** para personalizar as regras 
 *   [x] **Alertar Valores Negativos**: Monitora inconsistências financeiras nos totais.
 
 ---
+
+## 📞 Suporte & Customização
+
+O TISS Guard é gratuito para uso geral.
+**Para Clínicas e Hospitais:** Se você precisa de integração direta com seu ERP ou regras personalizadas de glosa:
+*   📧 **Integração Enterprise**: [t.precivalli@gmail.com](mailto:t.precivalli@gmail.com)
 
 *Desenvolvido para fortalecer a gestão em saúde suplementar.*

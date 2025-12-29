@@ -49,7 +49,7 @@ export const validateTiss = (xmlContent: string, settings: AppSettings = DEFAULT
         return {
             isValid: true,
             errors: [],
-            message: 'Arquivo TISS válido e íntegro.',
+            message: 'Estrutura TISS válida e íntegra.',
         };
 
     } catch (e) {
