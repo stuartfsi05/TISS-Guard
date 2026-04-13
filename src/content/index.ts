@@ -1,11 +1,11 @@
-import { validateTiss } from '../modules/validation/XmlValidatorService';
-import { StorageService } from '../modules/data/StorageService';
-import { PortalScraper } from '../modules/rpa/PortalScraper';
+import {
+  validateTiss,
+  parseXml,
+} from "../modules/validation/XmlValidatorService";
+import { StorageService } from "../modules/data/StorageService";
+import { PortalScraper } from "../modules/rpa/PortalScraper";
 
-
-
-
-const HOST_ID = 'tiss-guard-host';
+const HOST_ID = "tiss-guard-host";
 
 // Styles for the injected modal - Scoped for Shadow DOM
 const modalStyles = `
@@ -63,7 +63,7 @@ const makeDraggable = (modal: HTMLElement, handle: HTMLElement) => {
   let initialLeft = 0;
   let initialTop = 0;
 
-  handle.addEventListener('mousedown', (e) => {
+  handle.addEventListener("mousedown", (e) => {
     isDragging = true;
     startX = e.clientX;
     startY = e.clientY;
@@ -73,15 +73,15 @@ const makeDraggable = (modal: HTMLElement, handle: HTMLElement) => {
     initialTop = rect.top;
 
     // Remove 'right' positioning if set, so left/top takes over
-    modal.style.right = 'auto';
+    modal.style.right = "auto";
     modal.style.left = `${initialLeft}px`;
     modal.style.top = `${initialTop}px`;
 
-    handle.style.cursor = 'grabbing';
+    handle.style.cursor = "grabbing";
   });
 
   // Events on window to prevent losing drag if moving fast
-  window.addEventListener('mousemove', (e) => {
+  window.addEventListener("mousemove", (e) => {
     if (!isDragging) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
@@ -89,9 +89,9 @@ const makeDraggable = (modal: HTMLElement, handle: HTMLElement) => {
     modal.style.top = `${initialTop + dy}px`;
   });
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener("mouseup", () => {
     isDragging = false;
-    handle.style.cursor = 'grab';
+    handle.style.cursor = "grab";
   });
 };
 
@@ -99,19 +99,19 @@ const makeDraggable = (modal: HTMLElement, handle: HTMLElement) => {
 const createShadowHost = () => {
   let host = document.getElementById(HOST_ID);
   if (!host) {
-    host = document.createElement('div');
+    host = document.createElement("div");
     host.id = HOST_ID;
     document.body.appendChild(host);
-    const shadow = host.attachShadow({ mode: 'open' });
+    const shadow = host.attachShadow({ mode: "open" });
 
     // Inject Styles
-    const styleSheet = document.createElement('style');
+    const styleSheet = document.createElement("style");
     styleSheet.textContent = modalStyles;
     shadow.appendChild(styleSheet);
 
     // Create Container
-    const container = document.createElement('div');
-    container.className = 'tiss-guard-modal';
+    const container = document.createElement("div");
+    container.className = "tiss-guard-modal";
     container.innerHTML = `
             <div class="title">
                 ⚠️ Falha na validação TISS
@@ -129,10 +129,10 @@ const createShadowHost = () => {
 
 const showErrors = (errors: string[], targetInput: HTMLInputElement) => {
   const shadow = createShadowHost();
-  const modal = shadow.querySelector('.tiss-guard-modal') as HTMLElement;
-  const list = shadow.querySelector('.error-list') as HTMLElement;
-  const btnClear = shadow.querySelector('#btn-clear') as HTMLButtonElement;
-  const btnIgnore = shadow.querySelector('#btn-ignore') as HTMLButtonElement;
+  const modal = shadow.querySelector(".tiss-guard-modal") as HTMLElement;
+  const list = shadow.querySelector(".error-list") as HTMLElement;
+  const btnClear = shadow.querySelector("#btn-clear") as HTMLButtonElement;
+  const btnIgnore = shadow.querySelector("#btn-ignore") as HTMLButtonElement;
 
   if (!modal || !list) return;
 
@@ -143,29 +143,29 @@ const showErrors = (errors: string[], targetInput: HTMLInputElement) => {
   btnIgnore.parentNode?.replaceChild(newBtnIgnore, btnIgnore);
 
   // Populate errors
-  list.innerHTML = ''; // Clear existing
-  errors.forEach(err => {
-    const li = document.createElement('li');
+  list.innerHTML = ""; // Clear existing
+  errors.forEach((err) => {
+    const li = document.createElement("li");
     li.textContent = err;
     list.appendChild(li);
   });
-  modal.classList.add('visible');
+  modal.classList.add("visible");
 
   // Init Draggable
-  const title = shadow.querySelector('.title') as HTMLElement;
+  const title = shadow.querySelector(".title") as HTMLElement;
   if (title) {
     makeDraggable(modal, title);
   }
 
   // Action: Clear Input
-  newBtnClear.addEventListener('click', () => {
-    targetInput.value = ''; // Clear file
-    modal.classList.remove('visible');
+  newBtnClear.addEventListener("click", () => {
+    targetInput.value = ""; // Clear file
+    modal.classList.remove("visible");
   });
 
   // Action: Ignore (Just close modal, keep file)
-  newBtnIgnore.addEventListener('click', () => {
-    modal.classList.remove('visible');
+  newBtnIgnore.addEventListener("click", () => {
+    modal.classList.remove("visible");
   });
 };
 
@@ -176,14 +176,21 @@ const handleFileSelect = async (event: Event) => {
   if (!file) return;
 
   // Basic check to see if it might be an XML (by name or type)
-  if (!file.name.endsWith('.xml') && file.type !== 'text/xml') {
+  if (!file.name.endsWith(".xml") && file.type !== "text/xml") {
     return;
   }
 
   // Safety Check: 50MB Limit
   const MAX_SIZE = 50 * 1024 * 1024; // 50MB
   if (file.size > MAX_SIZE) {
-    showErrors(['⛔ Erro de Segurança', 'Arquivo excede o limite do navegador (50MB).', 'Reduza o arquivo antes de tentar novamente.'], target);
+    showErrors(
+      [
+        "⛔ Erro de Segurança",
+        "Arquivo excede o limite do navegador (50MB).",
+        "Reduza o arquivo antes de tentar novamente.",
+      ],
+      target,
+    );
     return;
   }
 
@@ -196,28 +203,28 @@ const handleFileSelect = async (event: Event) => {
     const result = await validateTiss(text, settings);
 
     // Optional: Keep tracking internal usage stats if desired, but not for blocking.
-    // await StorageService.incrementUsage(); 
+    // await StorageService.incrementUsage();
 
     if (!result.isValid) {
       // Alert the user
       // Map the ValidationError objects to strings for the simple display
-      const errorStrings = result.errors.map(e => `${e.message}`);
+      const errorStrings = result.errors.map((e) => `${e.message}`);
       showErrors(errorStrings, target);
     } else {
-      console.log('TISS Guard: Arquivo válido');
+      console.log("TISS Guard: Arquivo válido");
     }
   } catch (err) {
-    console.error('TISS Guard Error:', err);
+    console.error("TISS Guard Error:", err);
   }
 };
 
 // Monitor DOM for new inputs
 const observeInputs = () => {
   // Attach to existing file inputs
-  document.querySelectorAll('input[type="file"]').forEach(input => {
-    if (!input.hasAttribute('data-tiss-guard')) {
-      input.addEventListener('change', handleFileSelect);
-      input.setAttribute('data-tiss-guard', 'true');
+  document.querySelectorAll('input[type="file"]').forEach((input) => {
+    if (!input.hasAttribute("data-tiss-guard")) {
+      input.addEventListener("change", handleFileSelect);
+      input.setAttribute("data-tiss-guard", "true");
     }
   });
 
@@ -240,11 +247,11 @@ const injectRpaButton = () => {
   const shadow = createShadowHost(); // Reuse existing shadow root
 
   // Check if button already exists in shadow DOM to prevent duplicates
-  if (shadow.querySelector('#btn-rpa-fab')) return;
+  if (shadow.querySelector("#btn-rpa-fab")) return;
 
-  const btn = document.createElement('button');
-  btn.id = 'btn-rpa-fab';
-  btn.textContent = '🤖 Preencher TISS';
+  const btn = document.createElement("button");
+  btn.id = "btn-rpa-fab";
+  btn.textContent = "🤖 Preencher TISS";
   btn.style.cssText = `
         position: fixed;
         bottom: 24px;
@@ -264,14 +271,14 @@ const injectRpaButton = () => {
         backdrop-filter: blur(4px);
     `;
 
-  btn.onmouseover = () => btn.style.transform = 'scale(1.02)';
-  btn.onmouseout = () => btn.style.transform = 'scale(1)';
+  btn.onmouseover = () => (btn.style.transform = "scale(1.02)");
+  btn.onmouseout = () => (btn.style.transform = "scale(1)");
 
   // Hidden File Input for RPA
-  const rpaInput = document.createElement('input');
-  rpaInput.type = 'file';
-  rpaInput.accept = '.xml';
-  rpaInput.style.display = 'none';
+  const rpaInput = document.createElement("input");
+  rpaInput.type = "file";
+  rpaInput.accept = ".xml";
+  rpaInput.style.display = "none";
 
   // Hook up click
   btn.onclick = () => rpaInput.click();
@@ -292,20 +299,20 @@ const injectRpaButton = () => {
       if (!result.isValid) {
         // Show errors using existing mechanism but targeting the RPA input (virtual)
         // Or just Alert for now
-        alert(`⚠️ Atenção: O arquivo contém erros!\n\n${result.errors.map(e => e.message).join('\n')}`);
+        alert(
+          `⚠️ Atenção: O arquivo contém erros!\n\n${result.errors.map((e) => e.message).join("\n")}`,
+        );
         // return; // Optional: Stop or allow filling anyway? Let's allow but warn.
       }
 
       // 2. Parse & Fill
-      const { parseXml } = await import('../modules/validation/XmlValidatorService'); // Dynamic import to ensure parser is available
       const jsonObj = parseXml(text);
 
-      const { FormFiller } = await import('../modules/rpa/FormFiller');
+      const { FormFiller } = await import("../modules/rpa/FormFiller");
       FormFiller.fill(jsonObj);
-
     } catch (err) {
-      console.error('RPA Error:', err);
-      alert('Falha ao processar arquivo para preenchimento.');
+      console.error("RPA Error:", err);
+      alert("Falha ao processar arquivo para preenchimento.");
     }
   };
 
@@ -324,7 +331,7 @@ const initInjection = () => {
     observer.observe(document.body, { childList: true, subtree: true });
   } else {
     // Fallback if script runs at document_start (rare but possible)
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener("DOMContentLoaded", () => {
       injectRpaButton();
       observer.observe(document.body, { childList: true, subtree: true });
     });

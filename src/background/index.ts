@@ -1,1 +1,1 @@
-console.log('TISS Guard Service Worker Loaded');
+console.log("TISS Guard Service Worker Loaded");
