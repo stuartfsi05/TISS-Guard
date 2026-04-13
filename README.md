@@ -1,76 +1,77 @@
-# TISS Guard - Auditoria e Automação de Faturamento 🛡️
+# TISS Guard 🛡️
 
-> **Eficiência e Conformidade.** O TISS Guard é uma extensão gratuita projetada para eliminar glosas e automatizar processos manuais no faturamento médico (Padrão TISS/ANS).
+**Auditoria Inteligente e Automação de Faturamento Médico (Padrão TISS/ANS)**
+
+O **TISS Guard** é uma extensão de navegador profissional focada em eliminar glosas e modernizar a rotina de faturistas. Em fração de segundos, o sistema valida seus arquivos XML contra as complexas exigências da ANS e ainda automatiza a digitação de guias nos portais das operadoras. 
+
+Tudo isso rodando de forma 100% offline no seu computador, garantindo confidencialidade e alinhamento total com a LGPD.
 
 ---
 
-## 📋 Sobre o Projeto
+## 🎯 Por que utilizar o TISS Guard?
 
-*   **Validação Inteligente:** Verifica regras de negócio da ANS (TISS 3.05+), integridade estrutural e consistência de dados.
-*   **Relatórios de Auditoria:** Gera comprovantes em texto (log) para cada arquivo validado (Download).
-*   **Suporte Enterprise:** Compatível com arquivos **ISO-8859-1** (ERPs Legados) e UTF-8.
-*   **RPA Resiliente:** Preenchimento automático que "lê" a tela do portal (Unimed, Bradesco, etc.) usando heurística avançada.
-*   **Local-First:** Seus dados nunca saem do computador. Proteção total LGPD.
+Para clínicas, consultórios e faturistas, o processo de auditoria de arquivos XML é exaustivo e suscetível ao olho humano. Erros estruturais ou lógicos (como dados faltantes, limites de caracteres excedidos e numerações inválidas) são as principais causas de devoluções e glosas. 
+
+O TISS Guard atua em duas frentes vitais:
+
+1. **Prevenção (The Guard):** Verifica a saúde do seu arquivo antes do envio.
+2. **Eficiência (The RPA):** Lê o XML aprovado e preenche a tela do convênio por você. 
 
 ---
 
 ## ✨ Principais Funcionalidades
 
-### 1. Auditoria Preventiva (Validação XML)
-Evite o "vaivém" de arquivos. O sistema analisa a estrutura do seu XML instantaneamente e bloqueia o envio caso detecte:
-*   Datas futuras ou inválidas.
-*   Valores negativos ou inconsistentes.
-*   Códigos TUSS fora do padrão (8 dígitos).
-*   Ausência de guias ou dados obrigatórios.
+### 1. Motor de Validação XSD e Regras de Negócio
+Seu XML não passa apenas por uma leitura superficial. A extensão embarca um poderoso motor de validação que detecta:
+- Falhas na estrutura exigida pela TISS (versão 3.05+).
+- Estouro de limite de caracteres em campos chaves (ex: carteirinha excedendo 20 dígitos).
+- Domínios inválidos (ex: indicador de recém-nascido fora do padrão "S" ou "N").
+- Restrições de contexto e lógicas preventivas (datas futuras, valores negativos).
+  
+> *Os relatórios de falha foram desenhados para humanos: o sistema traduz os códigos engessados da ANS em ações corretivas simples, apontando o que você deve arrumar no sistema gerador.*
 
-### 2. Automação de Preenchimento (RPA)
-Reduza o trabalho manual. O sistema identifica formulários nos portais das operadoras e injeta um botão **"Preencher TISS"**. Ao selecionar seu arquivo, o TISS Guard preenche automaticamente todos os campos do site, eliminando erros de digitação e economizando horas de trabalho.
+### 2. Automação Inteligente de Interface (RPA Semantic System)
+Acabou a cópia e cola. O sistema identifica visualmente formulários de operadoras parceiras ou portais genéricos:
+- **Dicionário Semântico Integrado:** A extensão escaneia o site da operadora buscando onde digitar informações críticas do paciente e da consulta.
+- **Painel de Feedback Persistente:** Se a automação notar que o site não tem um campo (ou que a operadora mudou de layout repentinamente), um card flutuante evidenciará quais dados precisam ser digitados à mão pelo usuário, garantindo uma revisão final sem suposições.
 
-### 3. Privacidade e Segurança Local (LGPD / HIPAA)
-**Arquitetura Local-First**: Diferente de validadores online, o TISS Guard opera **exclusivamente no seu computador**.
-> 🔒 **Aviso de Privacidade:** Nenhum dado de paciente, médico ou conta médica trafega pela internet ou sai da sua máquina. O processamento é 100% offline, garantindo conformidade total com a LGPD.
-
----
-
-## 🚀 Como Instalar
-
-*O TISS Guard é uma extensão para Google Chrome e navegadores compatíveis.*
-
-1.  **Localize o Projeto**: Tenha a pasta do `TISS Guard` salva em seu computador.
-2.  **Acesse as Extensões**: No navegador, digite `chrome://extensions` na barra de endereço e tecle Enter.
-3.  **Ative o Modo Desenvolvedor**: No canto superior direito da tela, ative a chave **"Modo do desenvolvedor"**.
-4.  **Carregue a Extensão**:
-    *   Clique no botão **"Carregar sem compactação"** (Load Unpacked).
-    *   Selecione a pasta `dist` que está dentro da pasta do projeto `TISS Guard`.
-
-✅ **Concluído:** O ícone do escudo azul aparecerá na sua barra de ferramentas.
+### 3. Execução Local com Proteção Concorrente (Web Workers)
+Processar arquivos hospitalares pesados no navegador causaria lentidão extrema. A arquitetura do TISS Guard conta com _Web Workers_, rodando o processamento pesado numa ramificação segura para que o seu Chrome não trave, permitindo validações fluidas. A privacidade é absoluta: a internet não é usada no tratamento do XML.
 
 ---
 
-## � Guia de Utilização
+## 🚀 Como Instalar a Extensão (Passo a Passo)
 
-### Validando um Arquivo (Drag & Drop)
-Para garantir que um arquivo está pronto para envio:
-1.  Clique no ícone do **TISS Guard**.
-2.  Arraste o arquivo XML para a área indicada ou clique para selecionar.
-3.  **Feedback Imediato**:
-    *   **Sucesso (Verde)**: Arquivo validado e pronto para o portal.
-    *   **Atenção (Vermelho)**: Lista detalhada de correções necessárias.
+A instalação utiliza o modo desenvolvedor e leva apenas alguns segundos!
 
-### Utilizando a Automação (No Portal)
-1.  Acesse a página de digitação de guias no site da operadora.
-2.  Localize o botão flutuante **"Preencher TISS"** (injetado automaticamente pelo sistema).
-3.  Selecione o arquivo XML correspondente.
-4.  O sistema preencherá os campos da tela automaticamente.
+1. **Baixe ou clone este repositório** para uma pasta segura em seu computador.
+2. Abra o Google Chrome (ou derivados como Edge, Brave, etc.) e digite na barra de endereços: `chrome://extensions`.
+3. No canto superior direito desta tela, habilite a chave chamada **"Modo do desenvolvedor"**.
+4. Três novos botões aparecerão. Clique em **"Carregar sem compactação"** *(Load unpacked)*.
+5. Selecione a pasta `dist` (que está dentro do diretório do projeto TISS Guard que você baixou).
+
+✅ **Pronto!** O ícone azul do escudo do TISS Guard aparecerá ao lado da barra de tarefas do seu navegador (clique na peça de quebra-cabeça para fixá-lo).
 
 ---
 
-## ⚙️ Configurações Avançadas
+## 📘 Guia de Utilização na Prática
 
-No painel da extensão, acesse a aba **"OPÇÕES"** para personalizar as regras de auditoria:
-*   [x] **Bloquear Datas Futuras**: Impede procedimentos com data superior à atual.
-*   [x] **Alertar Valores Negativos**: Monitora inconsistências financeiras nos totais.
+### Realizando a Auditoria do XML (Drag & Drop)
+Antes de enviar o seu lote no site da operadora, passe no validador para ter certeza de que será pago:
+1. Abra o popup do **TISS Guard** (clicando no ícone do escudo azul).
+2. Arraste o arquivo XML do seu sistema para a área central da interface do popup. 
+3. **Resultado Imediato:**
+   - **Luz Verde (Aprovado):** Estrutura TISS garantida e pronta para envio.
+   - **Luz Vermelha (Reprovado):** O popup mostrará uma listagem didática contendo a respectiva **Ação Necessária** a ser feita (o que e onde arrumar no cadastro do paciente/guia do seu ERP).
+4. Clicando no botão inferior, você pode baixar o *Relatório de Validação* (.txt) detalhado para anexar ou compartilhar com sua equipe de TI.
+
+### Utilizando a Automação no Portal do Convênio (RPA)
+1. Certifique-se de estar na tela correta de digitação manual de guias dentro do portal da operadora (em seu navegador).
+2. Observe se o botão roxo flutuante **"Preencher TISS"** apareceu no canto direito inferior da tela (isso indica que a extensão reconheceu a página para você).
+3. Ao clicar no botão roxo, selecione o mesmo arquivo XML recém-validado.
+4. Fique à vontade e observe os campos piscarem em verde; o formulário será totalmente automatizado. Caso a operadora exija um campo que a extensão não tenha achado, um forte painel vermelho e impossível de ser ignorado o alertará para prosseguir com digitação manual, permitindo total previsibilidade.
 
 ---
 
-*Desenvolvido para fortalecer a gestão em saúde suplementar.*
+## ⚙️ Configurações e Preferências 
+O formato visual da aplicação é customizável. No app da extensão, na aba **OPÇÕES**, você encontrará parâmetros para alterar temas entre Claro e Escuro, e opções extras para ativar ou desativar monitoramento estrito de guias com Datas Futuras ou Valores Inconsistentes.

@@ -6,6 +6,25 @@ import { StorageService } from "../modules/data/StorageService";
 import { AppSettings, DEFAULT_SETTINGS } from "../types";
 import "./index.css";
 
+const translateErrorMessage = (code: string, fallbackMessage: string): string => {
+  switch (code) {
+    case "RuleRegistroANSConfirmacao":
+      return "O Registro da ANS da operadora está ausente no cabeçalho do arquivo.";
+    case "RuleCarteiraBeneficiarioCardinalidade":
+      return "A guia possui um paciente sem o número da carteirinha preenchido.";
+    case "RuleCarteiraMaxLengthRestricao":
+      return "A carteirinha do paciente possui mais de 20 dígitos. Corrija no cadastro do paciente.";
+    case "RuleGuiaPrestadorMaxLengthRestricao":
+      return "O número da guia gerada pelo seu sistema excedeu o limite máximo de 20 caracteres.";
+    case "RuleAtendimentoRNDominioEnum":
+      return "O campo 'Recém-Nascido' está inválido. Verifique o cadastro da guia, ele deve conter apenas 'S' (Sim) ou 'N' (Não).";
+    case "FUTURE_DATE":
+      return "A data do atendimento não pode ser no futuro.";
+    default:
+      return fallbackMessage;
+  }
+};
+
 const Popup = () => {
   const [activeTab, setActiveTab] = useState<"verify" | "settings">("verify");
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -371,9 +390,9 @@ Gerado por TISS Guard Enterprise
                               className={`${isDark ? "text-slate-300" : "text-slate-600"} leading-relaxed`}
                             >
                               <strong className="block text-[10px] uppercase tracking-wider opacity-70 mb-0.5">
-                                {error.code}
+                                Ação Necessária:
                               </strong>
-                              {error.message}
+                              {translateErrorMessage(error.code, error.message)}
                               {error.location && (
                                 <span className="block mt-0.5 text-[9px] font-mono opacity-50">
                                   {error.location}

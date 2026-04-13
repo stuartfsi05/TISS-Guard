@@ -207,46 +207,110 @@ export const FormFiller = {
     }
 
     if (context.filledCount > 0) {
-      const failureMsg =
-        context.failures.length > 0
-          ? `\n⚠️ ${context.failures.length} campos não encontrados.`
-          : "";
+      if (context.failures.length === 0) {
+        const toast = document.createElement("div");
+        toast.innerText = `TISS Guard: ${context.filledCount} campos preenchidos com sucesso!`;
+        Object.assign(toast.style, {
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          padding: "12px 24px",
+          backgroundColor: "#0f172a",
+          color: "white",
+          borderLeft: "4px solid #22c55e",
+          borderRadius: "8px",
+          zIndex: "2147483647",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "14px",
+          margin: "0",
+        });
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+      } else {
+        const panel = document.createElement("div");
+        Object.assign(panel.style, {
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          width: "380px",
+          backgroundColor: "#7f1d1d",
+          color: "#fef2f2",
+          borderRadius: "8px",
+          zIndex: "2147483647",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+          fontFamily: "system-ui, sans-serif",
+          border: "1px solid #991b1b",
+          padding: "20px",
+          margin: "0",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          boxSizing: "border-box"
+        });
 
-      const toast = document.createElement("div");
-      toast.innerText = `TISS Guard: ${context.filledCount} campos preenchidos.${failureMsg}`;
+        const title = document.createElement("h3");
+        title.innerText = "⚠️ Atenção: Preenchimento Incompleto";
+        Object.assign(title.style, {
+          margin: "0",
+          fontSize: "16px",
+          fontWeight: "bold",
+          lineHeight: "1.2",
+          color: "#fecaca"
+        });
+        panel.appendChild(title);
 
-      Object.assign(toast.style, {
-        position: "fixed",
-        bottom: "20px",
-        right: "20px",
-        padding: "12px 24px",
-        backgroundColor: context.failures.length > 0 ? "#431418" : "#0f172a",
-        color: "white",
-        borderLeft:
-          context.failures.length > 0
-            ? "4px solid #ef4444"
-            : "4px solid #22c55e",
-        borderRadius: "8px",
-        zIndex: "99999",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-        fontFamily: "system-ui",
-        fontSize: "14px",
-        lineHeight: "1.5",
-      });
+        const subtitle = document.createElement("p");
+        subtitle.innerText = "Os seguintes dados não puderam ser preenchidos automaticamente e exigem digitação manual:";
+        Object.assign(subtitle.style, {
+          margin: "0",
+          fontSize: "14px",
+          lineHeight: "1.4",
+          color: "#fca5a5"
+        });
+        panel.appendChild(subtitle);
 
-      if (context.failures.length > 0) {
-        toast.style.cursor = "pointer";
-        toast.title = "Clique para ver detalhes no Console";
-        toast.onclick = () => {
-          console.table(context.failures);
-          alert(
-            `Campos não encontrados:\n${context.failures.map((f) => `- ${f.field}: ${f.reason}`).join("\n")}`,
-          );
-        };
+        const ul = document.createElement("ul");
+        Object.assign(ul.style, {
+          margin: "0",
+          padding: "0 0 0 20px",
+          fontSize: "13px",
+          lineHeight: "1.5",
+          color: "#fff",
+          maxHeight: "150px",
+          overflowY: "auto"
+        });
+        
+        context.failures.forEach((f) => {
+          const li = document.createElement("li");
+          li.style.marginBottom = "4px";
+          li.innerHTML = `<strong>${f.field}:</strong> ${f.value}`;
+          ul.appendChild(li);
+        });
+        panel.appendChild(ul);
+
+        const btn = document.createElement("button");
+        btn.innerText = "Entendi / Fechar";
+        Object.assign(btn.style, {
+          marginTop: "8px",
+          padding: "10px 16px",
+          backgroundColor: "#b91c1c",
+          color: "white",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+          fontWeight: "bold",
+          fontSize: "14px",
+          fontFamily: "system-ui, sans-serif",
+          transition: "background-color 0.2s"
+        });
+        btn.onmouseover = () => btn.style.backgroundColor = "#dc2626";
+        btn.onmouseout = () => btn.style.backgroundColor = "#b91c1c";
+        btn.onclick = () => panel.remove();
+        panel.appendChild(btn);
+
+        document.body.appendChild(panel);
       }
-
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 8000);
     } else {
       console.log("⚠️ [TISS Guard RPA] No matching fields found.");
     }
