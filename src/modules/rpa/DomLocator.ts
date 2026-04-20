@@ -23,53 +23,92 @@ export const DomLocator = {
    * Uses semantic attributes first, labels second, and pure CSS selectors as a fallback.
    *
    * @param {SemanticTarget} target - The semantic criteria used to locate the input.
-   * @returns {HTMLInputElement | null} The resolved HTML input element, or null if not found.
+   * @param {Document | HTMLElement} context - Optional scope to limit the DOM search.
+   * @returns {HTMLElement | null} The resolved HTML element, or null if not found.
    */
-  locateInput(target: SemanticTarget): HTMLInputElement | null {
+  locateInput(
+    target: SemanticTarget,
+    context: Document | HTMLElement = document,
+  ): HTMLElement | null {
+    const el = this._searchInContext(target, context);
+    if (el) return el;
+
+    // Fallback de IFrame: Se não encontrou no documento raiz, procura em iframes de mesma origem
+    if (context === document) {
+      const iframes = document.querySelectorAll("iframe");
+      for (let i = 0; i < iframes.length; i++) {
+        try {
+          const iframeDoc =
+            iframes[i].contentDocument || iframes[i].contentWindow?.document;
+          if (iframeDoc) {
+            const iframeEl = this._searchInContext(target, iframeDoc);
+            if (iframeEl) return iframeEl;
+          }
+        } catch (e) {
+          // Ignora erros de iframes cross-origin
+        }
+      }
+    }
+
+    return null;
+  },
+
+  _searchInContext(
+    target: SemanticTarget,
+    context: Document | HTMLElement,
+  ): HTMLElement | null {
+    const validTags = "input, select, textarea";
+
     if (target.nameAttribute) {
-      const el = document.querySelector(
-        `input[name="${target.nameAttribute}"]`,
-      );
-      if (el instanceof HTMLInputElement) return el;
+      const els = context.querySelectorAll(validTags);
+      for (let i = 0; i < els.length; i++) {
+        if (els[i].getAttribute("name") === target.nameAttribute) return els[i] as HTMLElement;
+      }
     }
 
     if (target.ariaLabel) {
-      const el = document.querySelector(
-        `input[aria-label="${target.ariaLabel}"]`,
-      );
-      if (el instanceof HTMLInputElement) return el;
+      const els = context.querySelectorAll(validTags);
+      for (let i = 0; i < els.length; i++) {
+        if (els[i].getAttribute("aria-label") === target.ariaLabel) return els[i] as HTMLElement;
+      }
     }
 
     if (target.labelText) {
       const lowerLabel = target.labelText.toLowerCase();
-      const xpath = `//label[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ', 'abcdefghijklmnopqrstuvwxyzáéíóúàèìòùâêîôûãõç'), '${lowerLabel}')]`;
+      // Otimização de XPath: Usando .// para buscar a partir do nó de contexto (formulário/painel ativo) em vez de // global
+      const xpath = `.//label[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÃÕÇ', 'abcdefghijklmnopqrstuvwxyzáéíóúàèìòùâêîôûãõç'), '${lowerLabel}')]`;
 
-      const result = document.evaluate(
-        xpath,
-        document,
-        null,
-        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-        null,
-      );
+      const doc =
+        context.nodeType === 9 ? (context as Document) : context.ownerDocument;
 
-      for (let i = 0; i < result.snapshotLength; i += 1) {
-        const labelElement = result.snapshotItem(i) as HTMLLabelElement;
+      if (doc) {
+        const result = doc.evaluate(
+          xpath,
+          context,
+          null,
+          XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+          null,
+        );
 
-        const forId = labelElement.getAttribute("for");
-        if (forId) {
-          const el = document.getElementById(forId);
-          if (el instanceof HTMLInputElement) return el;
+        for (let i = 0; i < result.snapshotLength; i += 1) {
+          const labelElement = result.snapshotItem(i) as HTMLLabelElement;
+
+          const forId = labelElement.getAttribute("for");
+          if (forId) {
+            const el = doc.getElementById(forId);
+            if (el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA")) return el;
+          }
+
+          const nestedInput = labelElement.querySelector(validTags);
+          if (nestedInput) return nestedInput as HTMLElement;
         }
-
-        const nestedInput = labelElement.querySelector("input");
-        if (nestedInput instanceof HTMLInputElement) return nestedInput;
       }
     }
 
     if (target.cssFallback && target.cssFallback.length > 0) {
       for (const selector of target.cssFallback) {
-        const el = document.querySelector(selector);
-        if (el instanceof HTMLInputElement) return el;
+        const el = context.querySelector(selector);
+        if (el) return el as HTMLElement;
       }
     }
 

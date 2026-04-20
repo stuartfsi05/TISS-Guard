@@ -1,15 +1,8 @@
 // TISS Guard - XML Stream Worker
 // Implements "Split-and-Parse" strategy for low memory footprint validation.
 
-import { XMLParser } from "fast-xml-parser";
 import { validateTiss, ValidationError } from "./XmlValidatorService"; // Reusing logic but slightly adapted
 import { AppSettings, DEFAULT_SETTINGS } from "../../types";
-
-// Setup Parser
-const parser = new XMLParser({
-  ignoreAttributes: false,
-  removeNSPrefix: true,
-});
 
 // Polyfill/Type for FileReaderSync (Available in Worker, missing in standard lib.dom.d.ts)
 declare class FileReaderSync {
@@ -30,20 +23,18 @@ const processFileInChunks = async (file: File, settings: AppSettings) => {
     const text = reader.readAsText(slice, "ISO-8859-1"); // Defaulting to Latin1 for safety involved in TISS
     buffer += text;
 
-    // Regex to find complete tags commonly used for Guides
-    const guideRegex = /<(guia[\w-]+)>([\s\S]*?)<\/\1>/g;
+    // Regex to find complete tags commonly used for Guides (accounting for optional namespaces)
+    const guideRegex = /<(?:[a-zA-Z0-9-]+:)?(guia[a-zA-Z0-9-]+)[^>]*>([\s\S]*?)<\/(?:[a-zA-Z0-9-]+:)?\1>/g;
 
     let match;
+    let lastMatchEnd = 0;
     while ((match = guideRegex.exec(buffer)) !== null) {
-      const [fullTag] = match; // unused vars removed
+      const fullTag = match[0];
 
       // We have a full guide string! Parse it.
       try {
-        // Parse isolated chunk
-        const guideJson = parser.parse(fullTag);
-
-        // Validate
-        const result = await validateTiss(guideJson, settings);
+        // Validate the raw XML string directly (validateTiss handles parsing)
+        const result = await validateTiss(fullTag, settings);
 
         if (!result.isValid) {
           errors.push(...result.errors);
@@ -51,12 +42,17 @@ const processFileInChunks = async (file: File, settings: AppSettings) => {
       } catch (e) {
         console.error("Chunk Parse Error", e);
       }
+      lastMatchEnd = match.index + fullTag.length;
     }
 
-    // Reset Logic (Simplified for prototype)
-    // If buffer gets too large, we should trim it.
-    if (buffer.length > CHUNK_SIZE * 2) {
-      buffer = buffer.slice(buffer.length - 2000); // Keep tail
+    // Reset Logic: remove processed items to prevent memory leaks and reset regex pointer
+    if (lastMatchEnd > 0) {
+      buffer = buffer.slice(lastMatchEnd);
+      guideRegex.lastIndex = 0;
+    } else if (buffer.length > CHUNK_SIZE * 2) {
+      // Prevent infinite memory leak if no guides are found for a long time
+      buffer = buffer.slice(-CHUNK_SIZE);
+      guideRegex.lastIndex = 0;
     }
 
     offset += CHUNK_SIZE;

@@ -25,14 +25,23 @@ export interface FillStrategy {
 }
 
 interface ActionRecipe {
-  field: string;
+  field?: string;
   target: SemanticTarget;
+  isClick?: boolean;
+}
+
+interface WizardStep {
+  name: string;
+  triggerCondition?: SemanticTarget;
+  actions: ActionRecipe[];
+  waitForNextStepMs?: number;
 }
 
 interface PortalRecipe {
   portal: string;
   matches: string[];
-  actions: ActionRecipe[];
+  actions?: ActionRecipe[];
+  steps?: WizardStep[];
 }
 
 const findValue = (obj: any, key: string): string | null => {
@@ -45,17 +54,17 @@ const findValue = (obj: any, key: string): string | null => {
   return null;
 };
 
-const triggerEvents = (input: HTMLInputElement) => {
+const triggerEvents = (input: HTMLElement) => {
   const events = ["input", "change", "blur", "focus"];
   events.forEach((e) => input.dispatchEvent(new Event(e, { bubbles: true })));
 };
 
 /**
  * Force setting the native value bypassing Virtual DOM constraints, ensuring React/Angular pick it up.
- * @param {HTMLInputElement} element - The input element to fill.
+ * @param {HTMLElement} element - The input, select, or textarea element to fill.
  * @param {string} value - The intended value of the field.
  */
-const setNativeValue = (element: HTMLInputElement, value: string) => {
+const setNativeValue = (element: HTMLElement, value: string) => {
   const valueSetter = Object.getOwnPropertyDescriptor(element, "value")?.set;
   const prototype = Object.getPrototypeOf(element);
   const prototypeValueSetter = Object.getOwnPropertyDescriptor(
@@ -68,16 +77,39 @@ const setNativeValue = (element: HTMLInputElement, value: string) => {
   } else if (prototypeValueSetter) {
     prototypeValueSetter.call(element, value);
   } else {
-    element.value = value;
+    (element as any).value = value;
   }
 
   element.dispatchEvent(new Event("input", { bubbles: true }));
+  element.dispatchEvent(new Event("change", { bubbles: true }));
 };
 
-const visualizeFill = (input: HTMLInputElement) => {
+const visualizeFill = (input: HTMLElement) => {
   input.style.transition = "all 0.5s";
   input.style.backgroundColor = "#dcfce7";
   input.style.border = "2px solid #22c55e";
+};
+
+const waitForElement = (target: SemanticTarget, timeoutMs = 5000): Promise<HTMLElement | null> => {
+  return new Promise((resolve) => {
+    let el = DomLocator.locateInput(target);
+    if (el) return resolve(el);
+
+    const observer = new MutationObserver(() => {
+      el = DomLocator.locateInput(target);
+      if (el) {
+        observer.disconnect();
+        resolve(el);
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    setTimeout(() => {
+      observer.disconnect();
+      resolve(null);
+    }, timeoutMs);
+  });
 };
 
 class RecipeStrategy implements FillStrategy {
@@ -103,10 +135,49 @@ class RecipeStrategy implements FillStrategy {
   async execute(ctx: FillContext): Promise<void> {
     console.log(`[RPA] Executing Recipe: ${this.name}`);
 
-    for (const action of this.recipe.actions) {
+    if (this.recipe.steps && this.recipe.steps.length > 0) {
+      await this.executeWizard(ctx, this.recipe.steps);
+    } else if (this.recipe.actions) {
+      await this.executeActions(ctx, this.recipe.actions);
+    }
+  }
+
+  private async executeWizard(ctx: FillContext, steps: WizardStep[]): Promise<void> {
+    for (const step of steps) {
+      console.log(`[RPA] Executing Wizard Step: ${step.name}`);
+      
+      if (step.triggerCondition) {
+        const triggerEl = await waitForElement(step.triggerCondition, 10000);
+        if (!triggerEl) {
+          console.warn(`[RPA] Timeout waiting for step trigger: ${step.name}`);
+          continue;
+        }
+      }
+
+      await this.executeActions(ctx, step.actions);
+
+      if (step.waitForNextStepMs) {
+        await new Promise((resolve) => setTimeout(resolve, step.waitForNextStepMs));
+      }
+    }
+  }
+
+  private async executeActions(ctx: FillContext, actions: ActionRecipe[]): Promise<void> {
+    for (const action of actions) {
+      if (action.isClick) {
+        const el = DomLocator.locateInput(action.target);
+        if (el) {
+          el.click();
+          console.log(`[RPA] Clicked element for target:`, action.target);
+        }
+        continue;
+      }
+
+      if (!action.field) continue;
       const val = findValue(ctx.jsonObj, action.field);
       if (val) {
-        const el = DomLocator.locateInput(action.target);
+        // Usa waitForElement ao invés de busca imediata para lidar com atrasos de renderização (React)
+        const el = await waitForElement(action.target, 2000);
         if (el) {
           setNativeValue(el, val);
           triggerEvents(el);
@@ -139,13 +210,33 @@ const heuristicStrategy: FillStrategy = {
       },
       {
         tiss: "dataAtendimento",
-        labels: ["Data do Atendimento", "Data Execução"],
+        labels: ["Data do Atendimento", "Data Execução", "Data Realização"],
       },
       {
         tiss: "codigoBeneficiario",
         labels: ["Carteira", "Carteirinha", "Matrícula"],
       },
       { tiss: "valorTotal", labels: ["Valor Total", "Valor Geral"] },
+      {
+        tiss: "codigoPrestadorNaOperadora",
+        labels: ["Código do Prestador", "CRM", "Código Executante"],
+      },
+      {
+        tiss: "codigoProcedimento",
+        labels: ["Código TUSS", "Procedimento", "Código do Procedimento"],
+      },
+      {
+        tiss: "quantidadeExecutada",
+        labels: ["Quantidade", "Qtd", "Qtde"],
+      },
+      {
+        tiss: "indicacaoClinica",
+        labels: ["Indicação Clínica", "Motivo", "Observação"],
+      },
+      {
+        tiss: "tipoAcomodacao",
+        labels: ["Acomodação", "Tipo de Acomodação", "Leito"],
+      },
     ];
 
     const findInputByLabel = (candidates: string[]) => {
@@ -156,9 +247,9 @@ const heuristicStrategy: FillStrategy = {
         );
         if (match) {
           const forId = match.getAttribute("for");
-          if (forId) return document.getElementById(forId) as HTMLInputElement;
-          const nested = match.querySelector("input");
-          if (nested) return nested;
+          if (forId) return document.getElementById(forId) as HTMLElement;
+          const nested = match.querySelector("input, select, textarea");
+          if (nested) return nested as HTMLElement;
         }
       }
       return null;
@@ -168,7 +259,7 @@ const heuristicStrategy: FillStrategy = {
       const val = findValue(ctx.jsonObj, m.tiss);
       if (val) {
         const input = findInputByLabel(m.labels);
-        if (input && !input.value) {
+        if (input && !(input as any).value) {
           setNativeValue(input, val);
           triggerEvents(input);
           visualizeFill(input);
@@ -246,7 +337,7 @@ export const FormFiller = {
           display: "flex",
           flexDirection: "column",
           gap: "12px",
-          boxSizing: "border-box"
+          boxSizing: "border-box",
         });
 
         const title = document.createElement("h3");
@@ -256,17 +347,18 @@ export const FormFiller = {
           fontSize: "16px",
           fontWeight: "bold",
           lineHeight: "1.2",
-          color: "#fecaca"
+          color: "#fecaca",
         });
         panel.appendChild(title);
 
         const subtitle = document.createElement("p");
-        subtitle.innerText = "Os seguintes dados não puderam ser preenchidos automaticamente e exigem digitação manual:";
+        subtitle.innerText =
+          "Os seguintes dados não puderam ser preenchidos automaticamente e exigem digitação manual:";
         Object.assign(subtitle.style, {
           margin: "0",
           fontSize: "14px",
           lineHeight: "1.4",
-          color: "#fca5a5"
+          color: "#fca5a5",
         });
         panel.appendChild(subtitle);
 
@@ -278,9 +370,9 @@ export const FormFiller = {
           lineHeight: "1.5",
           color: "#fff",
           maxHeight: "150px",
-          overflowY: "auto"
+          overflowY: "auto",
         });
-        
+
         context.failures.forEach((f) => {
           const li = document.createElement("li");
           li.style.marginBottom = "4px";
@@ -302,10 +394,10 @@ export const FormFiller = {
           fontWeight: "bold",
           fontSize: "14px",
           fontFamily: "system-ui, sans-serif",
-          transition: "background-color 0.2s"
+          transition: "background-color 0.2s",
         });
-        btn.onmouseover = () => btn.style.backgroundColor = "#dc2626";
-        btn.onmouseout = () => btn.style.backgroundColor = "#b91c1c";
+        btn.onmouseover = () => (btn.style.backgroundColor = "#dc2626");
+        btn.onmouseout = () => (btn.style.backgroundColor = "#b91c1c");
         btn.onclick = () => panel.remove();
         panel.appendChild(btn);
 

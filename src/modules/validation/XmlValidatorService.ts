@@ -16,6 +16,7 @@ export interface ValidationResult {
 
 const parser = new XMLParser({
   ignoreAttributes: false,
+  attributeNamePrefix: "@_",
   removeNSPrefix: true,
 });
 

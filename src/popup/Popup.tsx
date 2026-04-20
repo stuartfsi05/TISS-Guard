@@ -6,7 +6,10 @@ import { StorageService } from "../modules/data/StorageService";
 import { AppSettings, DEFAULT_SETTINGS } from "../types";
 import "./index.css";
 
-const translateErrorMessage = (code: string, fallbackMessage: string): string => {
+const translateErrorMessage = (
+  code: string,
+  fallbackMessage: string,
+): string => {
   switch (code) {
     case "RuleRegistroANSConfirmacao":
       return "O Registro da ANS da operadora está ausente no cabeçalho do arquivo.";
