@@ -59,6 +59,7 @@ export const validateTiss = async (
       message: "Estrutura TISS Válida", // Updated message
     };
   } catch (e) {
+    console.error("Validation Runtime Error:", e);
     return {
       isValid: false,
       errors: [
