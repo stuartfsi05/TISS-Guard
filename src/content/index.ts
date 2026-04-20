@@ -350,7 +350,7 @@ const autoResumeRpa = async () => {
       const { FormFiller } = await import("../modules/rpa/FormFiller");
       // Resumes using the saved context jsonObj
       FormFiller.fill(savedState.context.jsonObj);
-    } catch(e) {
+    } catch (e) {
       console.error("Failed to resume RPA:", e);
       sessionStorage.removeItem(WIZARD_STATE_KEY);
     }

@@ -46,8 +46,8 @@ export const validateTiss = async (
       errors = errors.concat(ruleErrors);
     }
 
-    const hardErrors = errors.filter(e => e.severity !== "warning");
-    
+    const hardErrors = errors.filter((e) => e.severity !== "warning");
+
     if (hardErrors.length > 0) {
       return {
         isValid: false,

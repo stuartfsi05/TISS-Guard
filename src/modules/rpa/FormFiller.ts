@@ -99,7 +99,10 @@ const visualizeFill = (input: HTMLElement) => {
   input.style.border = "2px solid #22c55e";
 };
 
-const waitForElement = (target: SemanticTarget, timeoutMs = 5000): Promise<HTMLElement | null> => {
+const waitForElement = (
+  target: SemanticTarget,
+  timeoutMs = 5000,
+): Promise<HTMLElement | null> => {
   return new Promise((resolve) => {
     let el = DomLocator.locateInput(target);
     if (el) return resolve(el);
@@ -151,7 +154,10 @@ class RecipeStrategy implements FillStrategy {
     }
   }
 
-  private async executeWizard(ctx: FillContext, steps: WizardStep[]): Promise<void> {
+  private async executeWizard(
+    ctx: FillContext,
+    steps: WizardStep[],
+  ): Promise<void> {
     // Check if we are resuming
     let startingStep = 0;
     const savedStateStr = sessionStorage.getItem(WIZARD_STATE_KEY);
@@ -162,21 +168,26 @@ class RecipeStrategy implements FillStrategy {
           startingStep = savedState.currentStepIndex;
           ctx.filledCount = savedState.context.filledCount;
           ctx.failures = savedState.context.failures;
-          console.log(`[RPA] Resuming Wizard '${this.name}' at step ${startingStep}`);
+          console.log(
+            `[RPA] Resuming Wizard '${this.name}' at step ${startingStep}`,
+          );
         }
-      } catch(e) {}
+      } catch (e) {}
     }
 
     for (let i = startingStep; i < steps.length; i++) {
       const step = steps[i];
       console.log(`[RPA] Executing Wizard Step: ${step.name}`);
-      
+
       // Save state before waiting
-      sessionStorage.setItem(WIZARD_STATE_KEY, JSON.stringify({
-        recipeName: this.name,
-        currentStepIndex: i,
-        context: ctx
-      }));
+      sessionStorage.setItem(
+        WIZARD_STATE_KEY,
+        JSON.stringify({
+          recipeName: this.name,
+          currentStepIndex: i,
+          context: ctx,
+        }),
+      );
 
       if (step.triggerCondition) {
         const triggerEl = await waitForElement(step.triggerCondition, 10000);
@@ -189,7 +200,9 @@ class RecipeStrategy implements FillStrategy {
       await this.executeActions(ctx, step.actions);
 
       if (step.waitForNextStepMs) {
-        await new Promise((resolve) => setTimeout(resolve, step.waitForNextStepMs));
+        await new Promise((resolve) =>
+          setTimeout(resolve, step.waitForNextStepMs),
+        );
       }
     }
 
@@ -197,7 +210,10 @@ class RecipeStrategy implements FillStrategy {
     sessionStorage.removeItem(WIZARD_STATE_KEY);
   }
 
-  private async executeActions(ctx: FillContext, actions: ActionRecipe[]): Promise<void> {
+  private async executeActions(
+    ctx: FillContext,
+    actions: ActionRecipe[],
+  ): Promise<void> {
     for (const action of actions) {
       if (action.isClick) {
         const el = DomLocator.locateInput(action.target);
@@ -341,7 +357,13 @@ export const FormFiller = {
       }
     }
 
-    if (context.filledCount > 0 || strategies.some(s => s.name === "Heuristic Fallback Engine" && context.failures.length > 0)) {
+    if (
+      context.filledCount > 0 ||
+      strategies.some(
+        (s) =>
+          s.name === "Heuristic Fallback Engine" && context.failures.length > 0,
+      )
+    ) {
       if (context.failures.length === 0) {
         NotificationService.showSuccessToast(context.filledCount);
       } else {
@@ -351,7 +373,7 @@ export const FormFiller = {
       console.log("⚠️ [TISS Guard RPA] No matching fields found.");
     }
   },
-  
+
   /**
    * Clears any saved wizard state and unblocks the RPA memory.
    * Call this explicitly when closing the popup or when validation fails.
@@ -359,5 +381,5 @@ export const FormFiller = {
   clearState: () => {
     sessionStorage.removeItem(WIZARD_STATE_KEY);
     // Explicitly nullify references (Memory Leak Fix)
-  }
+  },
 };

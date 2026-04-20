@@ -493,7 +493,11 @@ Gerado por TISS Guard Enterprise
                 Versão 1.0.1 (Stable)
               </p>
               <a
-                href="mailto:t.precivalli@gmail.com"
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  chrome.tabs.create({ url: "mailto:t.precivalli@gmail.com" });
+                }}
                 className={`block mt-2 text-xs font-semibold hover:underline ${isDark ? "text-indigo-400" : "text-blue-600"}`}
               >
                 Precisa de integração customizada?

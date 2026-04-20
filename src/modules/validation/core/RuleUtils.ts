@@ -40,23 +40,23 @@ export const findAllValues = (
  */
 export const findPathValues = (
   obj: any,
-  path: string
+  path: string,
 ): { value: any; path: string }[] => {
   if (!obj || typeof obj !== "object") return [];
-  
+
   const results: { value: any; path: string }[] = [];
   JSONPath({
     path: path,
     json: obj,
-    resultType: 'all',
+    resultType: "all",
     callback: (result) => {
       // result has { value, path }
       // The path returned by jsonpath-plus is like $['mensagemTISS']['...']
       // We'll just pass it along
       results.push({ value: result.value, path: result.path });
-    }
+    },
   });
-  
+
   return results;
 };
 

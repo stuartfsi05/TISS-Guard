@@ -24,7 +24,8 @@ const processFileInChunks = async (file: File, settings: AppSettings) => {
     buffer += text;
 
     // Regex to find complete tags commonly used for Guides (accounting for optional namespaces)
-    const guideRegex = /<(?:[a-zA-Z0-9-]+:)?(guia[a-zA-Z0-9-]+)[^>]*>([\s\S]*?)<\/(?:[a-zA-Z0-9-]+:)?\1>/g;
+    const guideRegex =
+      /<(?:[a-zA-Z0-9-]+:)?(guia[a-zA-Z0-9-]+)[^>]*>([\s\S]*?)<\/(?:[a-zA-Z0-9-]+:)?\1>/g;
 
     let match;
     let lastMatchEnd = 0;

@@ -24,7 +24,9 @@ describe("XmlValidatorService", () => {
 
     const result = await validateTiss(xml, DEFAULT_SETTINGS);
     expect(result.isValid).toBe(false);
-    expect(result.errors.some(e => e.code === "DATA_FUTURA_DETECTADA")).toBe(true);
+    expect(result.errors.some((e) => e.code === "DATA_FUTURA_DETECTADA")).toBe(
+      true,
+    );
   });
 
   it("should warn about high complexity procedures without password", async () => {
@@ -48,6 +50,8 @@ describe("XmlValidatorService", () => {
       </mensagemTISS>`;
 
     const result = await validateTiss(xml, DEFAULT_SETTINGS);
-    expect(result.errors.some(e => e.code === "POSSIVEL_GLOSA_AUTORIZACAO")).toBe(true);
+    expect(
+      result.errors.some((e) => e.code === "POSSIVEL_GLOSA_AUTORIZACAO"),
+    ).toBe(true);
   });
 });

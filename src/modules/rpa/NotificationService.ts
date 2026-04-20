@@ -1,4 +1,3 @@
-
 import { MESSAGES } from "../i18n/constants";
 
 export const NotificationService = {
@@ -24,7 +23,9 @@ export const NotificationService = {
     setTimeout(() => toast.remove(), 5000);
   },
 
-  showFailurePanel(failures: { field: string; value: string; reason: string }[]) {
+  showFailurePanel(
+    failures: { field: string; value: string; reason: string }[],
+  ) {
     const panel = document.createElement("div");
     Object.assign(panel.style, {
       position: "fixed",

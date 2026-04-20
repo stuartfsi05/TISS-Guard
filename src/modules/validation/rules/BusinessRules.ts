@@ -108,24 +108,30 @@ export const IndicationRule = createDependencyRule(
 // 4. External Business Rules (Glosas Médicas)
 export const AuthorizationWarningRule: TissRule = {
   id: "ALERTA_AUTORIZACAO_PREVIA",
-  description: "Alerta sobre possível exigência de senha de autorização prévia para procedimentos complexos.",
+  description:
+    "Alerta sobre possível exigência de senha de autorização prévia para procedimentos complexos.",
   validate: (jsonObj: any) => {
     const errors: ValidationError[] = [];
-    
+
     // Safer path targeting only executed procedures to avoid matching secondary/irrelevant codes
-    const procs = findPathValues(jsonObj, "$..procedimentoExecutado..codigoProcedimento");
+    const procs = findPathValues(
+      jsonObj,
+      "$..procedimentoExecutado..codigoProcedimento",
+    );
     const passwords = findPathValues(jsonObj, "$..senha");
 
     // Heurística de procedimentos de alta complexidade (exemplos fictícios: RM, TC, Cirurgias)
-    const highComplexityPrefixes = ["40", "41", "31", "30"]; 
-    
+    const highComplexityPrefixes = ["40", "41", "31", "30"];
+
     procs.forEach((proc) => {
       const code = String(proc.value);
-      const isHighComplexity = highComplexityPrefixes.some(prefix => code.startsWith(prefix));
-      
+      const isHighComplexity = highComplexityPrefixes.some((prefix) =>
+        code.startsWith(prefix),
+      );
+
       if (isHighComplexity) {
         // If it's a high complexity procedure but there's no password/authorization field filled
-        if (passwords.length === 0 || passwords.every(p => !p.value)) {
+        if (passwords.length === 0 || passwords.every((p) => !p.value)) {
           errors.push({
             code: "POSSIVEL_GLOSA_AUTORIZACAO",
             message: `O procedimento ${code} geralmente exige senha de autorização prévia. Verifique as regras da operadora para evitar glosa.`,

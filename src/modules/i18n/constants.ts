@@ -12,9 +12,11 @@ export const ERROR_CODES = {
 };
 
 export const MESSAGES = {
-  RPA_SUCCESS: (count: number) => `TISS Guard: ${count} campos preenchidos com sucesso!`,
+  RPA_SUCCESS: (count: number) =>
+    `TISS Guard: ${count} campos preenchidos com sucesso!`,
   RPA_WARNING_TITLE: "⚠️ Atenção: Preenchimento Incompleto",
-  RPA_WARNING_SUBTITLE: "Os seguintes dados não puderam ser preenchidos automaticamente e exigem digitação manual:",
+  RPA_WARNING_SUBTITLE:
+    "Os seguintes dados não puderam ser preenchidos automaticamente e exigem digitação manual:",
   MODAL_VALIDATION_ERROR: "⚠️ Falha na validação TISS",
-  RPA_NO_FIELDS: "⚠️ [TISS Guard RPA] No matching fields found."
+  RPA_NO_FIELDS: "⚠️ [TISS Guard RPA] No matching fields found.",
 };

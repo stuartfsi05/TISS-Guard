@@ -62,14 +62,16 @@ export const DomLocator = {
     if (target.nameAttribute) {
       const els = context.querySelectorAll(validTags);
       for (let i = 0; i < els.length; i++) {
-        if (els[i].getAttribute("name") === target.nameAttribute) return els[i] as HTMLElement;
+        if (els[i].getAttribute("name") === target.nameAttribute)
+          return els[i] as HTMLElement;
       }
     }
 
     if (target.ariaLabel) {
       const els = context.querySelectorAll(validTags);
       for (let i = 0; i < els.length; i++) {
-        if (els[i].getAttribute("aria-label") === target.ariaLabel) return els[i] as HTMLElement;
+        if (els[i].getAttribute("aria-label") === target.ariaLabel)
+          return els[i] as HTMLElement;
       }
     }
 
@@ -96,7 +98,13 @@ export const DomLocator = {
           const forId = labelElement.getAttribute("for");
           if (forId) {
             const el = doc.getElementById(forId);
-            if (el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA")) return el;
+            if (
+              el &&
+              (el.tagName === "INPUT" ||
+                el.tagName === "SELECT" ||
+                el.tagName === "TEXTAREA")
+            )
+              return el;
           }
 
           const nestedInput = labelElement.querySelector(validTags);
