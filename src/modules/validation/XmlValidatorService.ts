@@ -6,6 +6,7 @@ export interface ValidationError {
   code: string;
   message: string;
   location?: string;
+  severity?: "error" | "warning";
 }
 
 export interface ValidationResult {
@@ -45,7 +46,9 @@ export const validateTiss = async (
       errors = errors.concat(ruleErrors);
     }
 
-    if (errors.length > 0) {
+    const hardErrors = errors.filter(e => e.severity !== "warning");
+    
+    if (hardErrors.length > 0) {
       return {
         isValid: false,
         errors: errors,
@@ -55,8 +58,8 @@ export const validateTiss = async (
 
     return {
       isValid: true,
-      errors: [],
-      message: "Estrutura TISS Válida", // Updated message
+      errors: errors, // return warnings even if valid
+      message: "Estrutura TISS Válida",
     };
   } catch (e) {
     console.error("Validation Runtime Error:", e);

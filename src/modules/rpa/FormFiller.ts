@@ -55,7 +55,7 @@ interface PortalRecipe {
 
 const findValue = (obj: any, key: string): string | null => {
   if (typeof obj !== "object" || obj === null) return null;
-  if (key in obj) return String(obj[key]);
+  if (key in obj && typeof obj[key] !== "object") return String(obj[key]);
   for (const k of Object.keys(obj)) {
     const val = findValue(obj[k], key);
     if (val) return val;
@@ -260,6 +260,7 @@ const heuristicStrategy: FillStrategy = {
         labels: ["Carteira", "Carteirinha", "Matrícula"],
       },
       { tiss: "valorTotal", labels: ["Valor Total", "Valor Geral"] },
+      { tiss: "valorTotalGeral", labels: ["Valor Total", "Valor Geral"] },
       {
         tiss: "codigoPrestadorNaOperadora",
         labels: ["Código do Prestador", "CRM", "Código Executante"],

@@ -129,7 +129,7 @@ export const AuthorizationWarningRule: TissRule = {
           errors.push({
             code: "POSSIVEL_GLOSA_AUTORIZACAO",
             message: `O procedimento ${code} geralmente exige senha de autorização prévia. Verifique as regras da operadora para evitar glosa.`,
-            // Opcionalmente, adicionar um flag de severity: "warning" na interface ValidationError
+            severity: "warning",
           });
         }
       }

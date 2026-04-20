@@ -46,6 +46,7 @@ export const TussValidationRule: TissRule = {
             errors.push({
               code: "TUSS_INEXISTENTE",
               message: `O código TUSS ${code} não foi encontrado na tabela local. (Local: ${hit.path})`,
+              severity: "warning",
             });
           }
         }
