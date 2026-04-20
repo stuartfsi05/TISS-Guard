@@ -1,4 +1,4 @@
-import { FillContext } from "./FormFiller";
+
 import { MESSAGES } from "../i18n/constants";
 
 export const NotificationService = {
@@ -81,7 +81,7 @@ export const NotificationService = {
     failures.forEach((f) => {
       const li = document.createElement("li");
       li.style.marginBottom = "4px";
-      li.innerHTML = \`<strong>\${f.field}:</strong> \${f.value}\`;
+      li.innerHTML = `<strong>${f.field}:</strong> ${f.value}`;
       ul.appendChild(li);
     });
     panel.appendChild(ul);

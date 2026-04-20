@@ -162,14 +162,14 @@ class RecipeStrategy implements FillStrategy {
           startingStep = savedState.currentStepIndex;
           ctx.filledCount = savedState.context.filledCount;
           ctx.failures = savedState.context.failures;
-          console.log(\`[RPA] Resuming Wizard '\${this.name}' at step \${startingStep}\`);
+          console.log(`[RPA] Resuming Wizard '${this.name}' at step ${startingStep}`);
         }
       } catch(e) {}
     }
 
     for (let i = startingStep; i < steps.length; i++) {
       const step = steps[i];
-      console.log(\`[RPA] Executing Wizard Step: \${step.name}\`);
+      console.log(`[RPA] Executing Wizard Step: ${step.name}`);
       
       // Save state before waiting
       sessionStorage.setItem(WIZARD_STATE_KEY, JSON.stringify({
@@ -181,7 +181,7 @@ class RecipeStrategy implements FillStrategy {
       if (step.triggerCondition) {
         const triggerEl = await waitForElement(step.triggerCondition, 10000);
         if (!triggerEl) {
-          console.warn(\`[RPA] Timeout waiting for step trigger: \${step.name}\`);
+          console.warn(`[RPA] Timeout waiting for step trigger: ${step.name}`);
           continue;
         }
       }
