@@ -244,8 +244,16 @@ const heuristicStrategy: FillStrategy = {
         labels: ["Número da Guia", "Nr. Guia", "Guia do Prestador"],
       },
       {
+        tiss: "dataExecucao",
+        labels: ["Data do Atendimento", "Data Execução", "Data Realização"],
+      },
+      {
         tiss: "dataAtendimento",
         labels: ["Data do Atendimento", "Data Execução", "Data Realização"],
+      },
+      {
+        tiss: "numeroCarteira",
+        labels: ["Carteira", "Carteirinha", "Matrícula"],
       },
       {
         tiss: "codigoBeneficiario",

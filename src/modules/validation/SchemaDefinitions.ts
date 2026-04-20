@@ -7,7 +7,7 @@ export const REQUIRED_STRUCTURE = {
   // Within mensagemTISS:
   header: ["cabecalho", "ans:cabecalho"],
   // Within cabecalho:
-  headerFields: ["identificacaoTransacao", "origem", "destino", "padrao"],
+  headerFields: ["identificacaoTransacao", "origem", "destino"],
   // The simplified body often acts as a wrapper for loteGuias
   body: [
     "prestadorParaOperadora",

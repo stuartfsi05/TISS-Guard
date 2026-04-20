@@ -1,5 +1,5 @@
 import { TissRule } from "../core/TissRule";
-import { findAllValues } from "../core/RuleUtils";
+import { findPathValues } from "../core/RuleUtils";
 import { ValidationError } from "../XmlValidatorService";
 import { TussDatabaseService } from "../../data/TussDatabaseService";
 
@@ -8,7 +8,7 @@ export const TussFormatRule: TissRule = {
   description: "Verifica se os códigos da tabela possuem 8 dígitos numéricos.",
   validate: (jsonObj: any) => {
     const errors: ValidationError[] = [];
-    const hits = findAllValues(jsonObj, "codigoTabela");
+    const hits = findPathValues(jsonObj, "$..codigoProcedimento");
 
     hits.forEach((hit) => {
       const val = String(hit.value);
@@ -28,7 +28,7 @@ export const TussValidationRule: TissRule = {
   description: "Valida se códigos TUSS existem na tabela vigente (IndexedDB).",
   validate: async (jsonObj: any) => {
     const errors: ValidationError[] = [];
-    const hits = findAllValues(jsonObj, "codigoTabela");
+    const hits = findPathValues(jsonObj, "$..codigoProcedimento");
 
     // Ensure DB is ready
     await TussDatabaseService.init();

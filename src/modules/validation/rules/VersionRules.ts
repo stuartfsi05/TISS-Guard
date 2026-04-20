@@ -13,6 +13,8 @@ export const TissVersionRule: TissRule = {
       // Common tag names for version
       if (obj.padrao) return obj.padrao;
       if (obj["ans:padrao"]) return obj["ans:padrao"];
+      if (obj.versaoPadrao) return obj.versaoPadrao;
+      if (obj["ans:versaoPadrao"]) return obj["ans:versaoPadrao"];
 
       if (typeof obj === "object") {
         for (const key in obj) {
