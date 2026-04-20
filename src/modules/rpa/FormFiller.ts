@@ -1,5 +1,14 @@
 import { DomLocator, SemanticTarget } from "./DomLocator";
 import recipeSemantic from "./recipes/recipe-semantic.json";
+import { NotificationService } from "./NotificationService";
+
+const WIZARD_STATE_KEY = "TISS_GUARD_WIZARD_STATE";
+
+interface WizardState {
+  recipeName: string;
+  currentStepIndex: number;
+  context: FillContext;
+}
 
 /**
  * Context object tracking the state of form filling operations.
@@ -143,13 +152,36 @@ class RecipeStrategy implements FillStrategy {
   }
 
   private async executeWizard(ctx: FillContext, steps: WizardStep[]): Promise<void> {
-    for (const step of steps) {
-      console.log(`[RPA] Executing Wizard Step: ${step.name}`);
+    // Check if we are resuming
+    let startingStep = 0;
+    const savedStateStr = sessionStorage.getItem(WIZARD_STATE_KEY);
+    if (savedStateStr) {
+      try {
+        const savedState: WizardState = JSON.parse(savedStateStr);
+        if (savedState.recipeName === this.name) {
+          startingStep = savedState.currentStepIndex;
+          ctx.filledCount = savedState.context.filledCount;
+          ctx.failures = savedState.context.failures;
+          console.log(\`[RPA] Resuming Wizard '\${this.name}' at step \${startingStep}\`);
+        }
+      } catch(e) {}
+    }
+
+    for (let i = startingStep; i < steps.length; i++) {
+      const step = steps[i];
+      console.log(\`[RPA] Executing Wizard Step: \${step.name}\`);
       
+      // Save state before waiting
+      sessionStorage.setItem(WIZARD_STATE_KEY, JSON.stringify({
+        recipeName: this.name,
+        currentStepIndex: i,
+        context: ctx
+      }));
+
       if (step.triggerCondition) {
         const triggerEl = await waitForElement(step.triggerCondition, 10000);
         if (!triggerEl) {
-          console.warn(`[RPA] Timeout waiting for step trigger: ${step.name}`);
+          console.warn(\`[RPA] Timeout waiting for step trigger: \${step.name}\`);
           continue;
         }
       }
@@ -160,6 +192,9 @@ class RecipeStrategy implements FillStrategy {
         await new Promise((resolve) => setTimeout(resolve, step.waitForNextStepMs));
       }
     }
+
+    // Wizard finished, clear state
+    sessionStorage.removeItem(WIZARD_STATE_KEY);
   }
 
   private async executeActions(ctx: FillContext, actions: ActionRecipe[]): Promise<void> {
@@ -297,114 +332,23 @@ export const FormFiller = {
       }
     }
 
-    if (context.filledCount > 0) {
+    if (context.filledCount > 0 || strategies.some(s => s.name === "Heuristic Fallback Engine" && context.failures.length > 0)) {
       if (context.failures.length === 0) {
-        const toast = document.createElement("div");
-        toast.innerText = `TISS Guard: ${context.filledCount} campos preenchidos com sucesso!`;
-        Object.assign(toast.style, {
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          padding: "12px 24px",
-          backgroundColor: "#0f172a",
-          color: "white",
-          borderLeft: "4px solid #22c55e",
-          borderRadius: "8px",
-          zIndex: "2147483647",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "14px",
-          margin: "0",
-        });
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 5000);
+        NotificationService.showSuccessToast(context.filledCount);
       } else {
-        const panel = document.createElement("div");
-        Object.assign(panel.style, {
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          width: "380px",
-          backgroundColor: "#7f1d1d",
-          color: "#fef2f2",
-          borderRadius: "8px",
-          zIndex: "2147483647",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-          fontFamily: "system-ui, sans-serif",
-          border: "1px solid #991b1b",
-          padding: "20px",
-          margin: "0",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          boxSizing: "border-box",
-        });
-
-        const title = document.createElement("h3");
-        title.innerText = "⚠️ Atenção: Preenchimento Incompleto";
-        Object.assign(title.style, {
-          margin: "0",
-          fontSize: "16px",
-          fontWeight: "bold",
-          lineHeight: "1.2",
-          color: "#fecaca",
-        });
-        panel.appendChild(title);
-
-        const subtitle = document.createElement("p");
-        subtitle.innerText =
-          "Os seguintes dados não puderam ser preenchidos automaticamente e exigem digitação manual:";
-        Object.assign(subtitle.style, {
-          margin: "0",
-          fontSize: "14px",
-          lineHeight: "1.4",
-          color: "#fca5a5",
-        });
-        panel.appendChild(subtitle);
-
-        const ul = document.createElement("ul");
-        Object.assign(ul.style, {
-          margin: "0",
-          padding: "0 0 0 20px",
-          fontSize: "13px",
-          lineHeight: "1.5",
-          color: "#fff",
-          maxHeight: "150px",
-          overflowY: "auto",
-        });
-
-        context.failures.forEach((f) => {
-          const li = document.createElement("li");
-          li.style.marginBottom = "4px";
-          li.innerHTML = `<strong>${f.field}:</strong> ${f.value}`;
-          ul.appendChild(li);
-        });
-        panel.appendChild(ul);
-
-        const btn = document.createElement("button");
-        btn.innerText = "Entendi / Fechar";
-        Object.assign(btn.style, {
-          marginTop: "8px",
-          padding: "10px 16px",
-          backgroundColor: "#b91c1c",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontWeight: "bold",
-          fontSize: "14px",
-          fontFamily: "system-ui, sans-serif",
-          transition: "background-color 0.2s",
-        });
-        btn.onmouseover = () => (btn.style.backgroundColor = "#dc2626");
-        btn.onmouseout = () => (btn.style.backgroundColor = "#b91c1c");
-        btn.onclick = () => panel.remove();
-        panel.appendChild(btn);
-
-        document.body.appendChild(panel);
+        NotificationService.showFailurePanel(context.failures);
       }
     } else {
       console.log("⚠️ [TISS Guard RPA] No matching fields found.");
     }
   },
+  
+  /**
+   * Clears any saved wizard state and unblocks the RPA memory.
+   * Call this explicitly when closing the popup or when validation fails.
+   */
+  clearState: () => {
+    sessionStorage.removeItem(WIZARD_STATE_KEY);
+    // Explicitly nullify references (Memory Leak Fix)
+  }
 };

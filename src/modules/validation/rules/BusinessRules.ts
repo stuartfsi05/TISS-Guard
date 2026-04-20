@@ -1,5 +1,5 @@
 import { TissRule } from "../core/TissRule";
-import { findAllValues, createDependencyRule } from "../core/RuleUtils";
+import { findPathValues, createDependencyRule } from "../core/RuleUtils";
 import { ValidationError } from "../XmlValidatorService";
 
 export const MissingGuiaRule: TissRule = {
@@ -9,7 +9,7 @@ export const MissingGuiaRule: TissRule = {
   validate: (jsonObj: any) => {
     const errors: ValidationError[] = [];
     // Heuristic: If we are deep inside a guide structure, we expect a number
-    const hits = findAllValues(jsonObj, "numeroGuiaPrestador");
+    const hits = findPathValues(jsonObj, "$..numeroGuiaPrestador");
 
     // Simpler check for now:
     hits.forEach((hit) => {
@@ -36,7 +36,7 @@ export const FutureDateRule: TissRule = {
     today.setHours(23, 59, 59, 999); // Allow anytime today
 
     dateFields.forEach((field) => {
-      const hits = findAllValues(jsonObj, field);
+      const hits = findPathValues(jsonObj, `$..${field}`);
       hits.forEach((hit) => {
         const parts = String(hit.value).split("-"); // YYYY-MM-DD
         if (parts.length === 3) {
@@ -68,7 +68,7 @@ export const NegativeValueRule: TissRule = {
     ];
 
     valueFields.forEach((field) => {
-      const hits = findAllValues(jsonObj, field);
+      const hits = findPathValues(jsonObj, `$..${field}`);
       hits.forEach((hit) => {
         const val = parseFloat(hit.value);
         if (val < 0) {
@@ -89,12 +89,12 @@ export const IndicationRule = createDependencyRule(
   "INDICACAO_CLINICA_OBRIGATORIA",
   "Exige indicação clínica para exames (Tipo 05).",
   (json) => {
-    const types = findAllValues(json, "tipoAtendimento");
+    const types = findPathValues(json, "$..tipoAtendimento");
     return types.some((t) => String(t.value) === "05");
   },
   (json) => {
     const errors: ValidationError[] = [];
-    const indications = findAllValues(json, "indicacaoClinica");
+    const indications = findPathValues(json, "$..indicacaoClinica");
     if (indications.length === 0) {
       errors.push({
         code: "INDICACAO_CLINICA_AUSENTE",
@@ -112,9 +112,9 @@ export const AuthorizationWarningRule: TissRule = {
   validate: (jsonObj: any) => {
     const errors: ValidationError[] = [];
     
-    // Check if there are procedures (typically "codigoProcedimento" or "procedimentosExecutados")
-    const procs = findAllValues(jsonObj, "codigoProcedimento");
-    const passwords = findAllValues(jsonObj, "senha");
+    // Safer path targeting only executed procedures to avoid matching secondary/irrelevant codes
+    const procs = findPathValues(jsonObj, "$..procedimentoExecutado..codigoProcedimento");
+    const passwords = findPathValues(jsonObj, "$..senha");
 
     // Heurística de procedimentos de alta complexidade (exemplos fictícios: RM, TC, Cirurgias)
     const highComplexityPrefixes = ["40", "41", "31", "30"]; 

@@ -339,3 +339,22 @@ const initInjection = () => {
 };
 
 initInjection();
+
+const autoResumeRpa = async () => {
+  const WIZARD_STATE_KEY = "TISS_GUARD_WIZARD_STATE";
+  const savedStateStr = sessionStorage.getItem(WIZARD_STATE_KEY);
+  if (savedStateStr) {
+    console.log("🤖 [TISS Guard] Active RPA session detected. Resuming...");
+    try {
+      const savedState = JSON.parse(savedStateStr);
+      const { FormFiller } = await import("../modules/rpa/FormFiller");
+      // Resumes using the saved context jsonObj
+      FormFiller.fill(savedState.context.jsonObj);
+    } catch(e) {
+      console.error("Failed to resume RPA:", e);
+      sessionStorage.removeItem(WIZARD_STATE_KEY);
+    }
+  }
+};
+
+autoResumeRpa();
