@@ -72,7 +72,7 @@ export const SecureStorage = {
   getItem: async <T>(key: string): Promise<T | null> => {
     try {
       const store = await chrome.storage.local.get([`SEC_${key}`]);
-      const payload = store[`SEC_${key}`];
+      const payload = store[`SEC_${key}`] as string | undefined;
       if (!payload) return null;
 
       const [ivB64, cipherB64] = payload.split(":");

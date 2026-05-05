@@ -4,6 +4,7 @@ import {
 } from "../modules/validation/XmlValidatorService";
 import { StorageService } from "../modules/data/StorageService";
 import { PortalScraper } from "../modules/rpa/PortalScraper";
+import { PortalDetector } from "../modules/rpa/PortalDetector";
 
 const HOST_ID = "tiss-guard-host";
 
@@ -220,7 +221,7 @@ const handleFileSelect = async (event: Event) => {
 
 // Monitor DOM for new inputs
 const observeInputs = () => {
-  // Attach to existing file inputs
+  // Attach to existing file inputs (active on ALL pages — any portal may have TISS upload)
   document.querySelectorAll('input[type="file"]').forEach((input) => {
     if (!input.hasAttribute("data-tiss-guard")) {
       input.addEventListener("change", handleFileSelect);
@@ -228,11 +229,12 @@ const observeInputs = () => {
     }
   });
 
-  // [Phase 2] Scan for Portal Errors
-  // We debounce this to avoid spamming on every DOM change
-  const errors = PortalScraper.scan();
-  if (errors.length > 0) {
-    // console.log('⚠️ [TISS Guard] Portal Error Detected:', errors); // Silenced for Production
+  // [Phase 2] Scan for Portal Errors — ONLY on recognized TISS portals
+  if (PortalDetector.isOnPortal()) {
+    const errors = PortalScraper.scan();
+    if (errors.length > 0) {
+      // console.log('⚠️ [TISS Guard] Portal Error Detected:', errors); // Silenced for Production
+    }
   }
 };
 
@@ -327,12 +329,17 @@ observeInputs();
 // and check if we are in a valid state to inject the Fab.
 const initInjection = () => {
   if (document.body) {
-    injectRpaButton();
+    // FAB button ONLY on recognized TISS portals
+    if (PortalDetector.isOnPortal()) {
+      injectRpaButton();
+    }
     observer.observe(document.body, { childList: true, subtree: true });
   } else {
     // Fallback if script runs at document_start (rare but possible)
     window.addEventListener("DOMContentLoaded", () => {
-      injectRpaButton();
+      if (PortalDetector.isOnPortal()) {
+        injectRpaButton();
+      }
       observer.observe(document.body, { childList: true, subtree: true });
     });
   }
@@ -341,6 +348,9 @@ const initInjection = () => {
 initInjection();
 
 const autoResumeRpa = async () => {
+  // Only resume RPA sessions on recognized TISS portals
+  if (!PortalDetector.isOnPortal()) return;
+
   const WIZARD_STATE_KEY = "TISS_GUARD_WIZARD_STATE";
   const savedStateStr = sessionStorage.getItem(WIZARD_STATE_KEY);
   if (savedStateStr) {

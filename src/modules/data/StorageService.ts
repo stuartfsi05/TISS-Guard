@@ -13,7 +13,8 @@ export const StorageService = {
     }
 
     const result = await chrome.storage.local.get(["settings"]);
-    let settings = result.settings || DEFAULT_SETTINGS;
+    let settings: AppSettings =
+      (result.settings as AppSettings) || DEFAULT_SETTINGS;
 
     // Ensure usage object exists (migration)
     if (!settings.usage) {
